@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 from environ import Env
+import sys
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -116,6 +117,42 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# 테스트 환경 설정
+if 'test' in sys.argv:
+    # 테스트용 데이터베이스 (메모리 사용)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+    
+    # 테스트용 이메일 백엔드
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    
+    # 빠른 비밀번호 해싱
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]
+    
+    # dj-rest-auth 테스트 설정
+    ACCOUNT_EMAIL_VERIFICATION = 'none'
+    ACCOUNT_EMAIL_REQUIRED = False
+    ACCOUNT_AUTHENTICATION_METHOD = 'email'
+    ACCOUNT_USERNAME_REQUIRED = False
+    
+    # REST Framework 테스트 설정
+    REST_FRAMEWORK = {
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework.authentication.TokenAuthentication',
+            'rest_framework.authentication.SessionAuthentication',
+        ],
+        'DEFAULT_PERMISSION_CLASSES': [
+            'rest_framework.permissions.IsAuthenticated',
+        ],
+        'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+    }
 
 
 # Password validation
