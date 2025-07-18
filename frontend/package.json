@@ -24,7 +24,7 @@
 
     "@mui/material": "^5.15.18",
 
-    "@reduxjs/toolkit": "^2.2.5",
+    "@reduxjs/toolkit": "^2.8.2",
 
     "axios": "^1.6.8",
 
@@ -52,7 +52,7 @@
 
     "react-model": "^4.3.1",
 
-    "react-redux": "^9.1.2",
+    "react-redux": "^9.2.0",
 
     "react-router-dom": "^6.23.0",
 
@@ -71,15 +71,21 @@
   },
 
   "scripts": {
-
-    "test": "react-app-rewired test",
-
+    "test": "react-scripts test",
     "start": "react-scripts start",
+    "build": "react-scripts build",
+    "eject": "react-scripts eject",
+    "test:coverage": "react-scripts test --coverage --watchAll=false"
+  },
 
-    "build": "react-app-rewired build",
-
-    "eject": "react-scripts eject"
-
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!(axios)/)"
+    ],
+    "moduleNameMapper": {
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/src/__mocks__/fileMock.js"
+    }
   },
 
   "author": "",
@@ -112,9 +118,23 @@
 
   "devDependencies": {
 
+    "@babel/core": "^7.28.0",
+
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
 
+    "@babel/preset-env": "^7.28.0",
+
+    "@babel/preset-react": "^7.27.1",
+
+    "@testing-library/jest-dom": "^6.6.3",
+
+    "@testing-library/react": "^14.3.1",
+
+    "@testing-library/user-event": "^14.6.1",
+
     "assert": "^2.1.0",
+
+    "babel-jest": "^30.0.4",
 
     "buffer": "^6.0.3",
 
@@ -123,6 +143,10 @@
     "css-loader": "^7.1.1",
 
     "https-browserify": "^1.0.0",
+
+    "identity-obj-proxy": "^3.0.0",
+
+    "jest-transform-stub": "^2.0.0",
 
     "os-browserify": "^0.3.0",
 
