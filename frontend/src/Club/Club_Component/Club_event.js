@@ -4,6 +4,8 @@ import axios from 'axios';
 import "../Club_Style/Club_event.css";
 import ClubHeader from "./Club_head.js"
 import { Button } from 'react-bootstrap';
+import API_BASE_URL from '../../config/apiConfig.js';
+
 const ClubEvent = () => {
   const { club_name } = useParams();
   const [events, setEvents] = useState([]);
@@ -17,7 +19,7 @@ const ClubEvent = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await axios.get(`http://localhost:8000/club_information/club/${club_name}/events/`, {
+        const response = await axios.get(`${API_BASE_URL}/club_information/club/${club_name}/events/`, {
           params: {
             search_type: searchOption,
             search_query: searchText

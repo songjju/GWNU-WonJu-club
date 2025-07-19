@@ -1,6 +1,8 @@
+import API_BASE_URL from '../../../config/apiConfig'; // API 설정 임포트
+
 // 게시글 번호에 해당하는 게시글 또는 공지사항 가져오기
 const getPostByNo = async (postId,token) => {
-  let url = 'http://127.0.0.1:8000/club_board/post_detail/'+postId;
+  let url = '${API_BASE_URL}/club_board/post_detail/'+postId;
   let options = {
     method: 'GET',
     headers: {
@@ -21,7 +23,7 @@ const getPostByNo = async (postId,token) => {
 
 // 추천 수 증가 함수
 export const increaseRecommendCount =  async(post_id,token) => {
-  const url = `http://127.0.0.1:8000/club_board/post_recommend/${post_id}/`;
+  const url = `${API_BASE_URL}/club_board/post_recommend/${post_id}/`;
   const options = {
     method: 'POST',
     headers: {
@@ -44,7 +46,7 @@ export const increaseRecommendCount =  async(post_id,token) => {
 // 게시글 삭제 함수
 export async function deletePost(postId,token) {
   try {
-    const response = await fetch(`http://127.0.0.1:8000/club_board/post_detail/${postId}/`, {
+    const response = await fetch(`${API_BASE_URL}/club_board/post_detail/${postId}/`, {
       method: 'DELETE',
       headers: {
         'Accept': 'application/json',
@@ -62,7 +64,7 @@ export async function deletePost(postId,token) {
 
 // 댓글 수정 삭제 함수
 export const handleComment = async(method, comment_id, token, data='') => {
-  const url = `http://127.0.0.1:8000/club_board/comment_detail/${comment_id}/`
+  const url = `${API_BASE_URL}/club_board/comment_detail/${comment_id}/`
   const options = {
     method: method,
     headers: {
@@ -87,7 +89,7 @@ export const handleComment = async(method, comment_id, token, data='') => {
 }
 
 export const createComment = async(post_id, content,token) => { // TODO post_id back front 수정
-  const url = `http://127.0.0.1:8000/club_board/comment_create/`;
+  const url = `${API_BASE_URL}/club_board/comment_create/`;
   const options = {
     method: 'POST',
     headers: {

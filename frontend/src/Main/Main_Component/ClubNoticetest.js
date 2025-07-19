@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '../Main_Style/ClubNotice.module.css';
 import { Table, Button, Input, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../../config/apiConfig';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const handlePageChange = (page) => {
@@ -60,7 +61,7 @@ const ClubNotice = () => {
 
   const fetchNotices = (page, search, sort, tag) => {
     setIsLoading(true);
-    fetch(`http://localhost:8000/club_board/notice/?page=${page}&search=${search}&ordering=${sort}&tag=${tag}`, {
+    fetch(`${API_BASE_URL}/club_board/notice/?page=${page}&search=${search}&ordering=${sort}&tag=${tag}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -83,7 +84,7 @@ const ClubNotice = () => {
   };
 
   const fetchTags = () => {
-    fetch(`http://localhost:8000/club_board/tags/`, {
+    fetch(`${API_BASE_URL}/club_board/tags/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

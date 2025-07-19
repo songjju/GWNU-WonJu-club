@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Container, Form, Button, Image } from "react-bootstrap";
 import "./CreateClub.css";
 import { LogoImage, BannerImage } from "../styles";
+import API_BASE_URL from "../config/apiConfig"; // API 설정 임포트
 
 const CreateClubPage = () => {
   const [clubName, setClubName] = useState("");
@@ -28,7 +29,7 @@ const CreateClubPage = () => {
       introducation: introduction,
     };
 
-    fetch('http://127.0.0.1:8000/club_introduce/create_club/', {
+    fetch(`${API_BASE_URL}/club_introduce/create_club/`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',

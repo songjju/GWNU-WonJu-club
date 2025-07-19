@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ClubHeader from '../Club_Component/Club_head';
 import { Button } from 'react-bootstrap';
+import API_BASE_URL from '../../config/apiConfig'; // API 설정 임포트
 
 const ClubCreatePost = () => {
   const [club, setClub] = useState('');
@@ -44,7 +45,7 @@ const clubName = queryParams.get('clubName');
     };
 
     console.log(post);
-    const url = 'http://127.0.0.1:8000/club_board/post/';
+    const url = `${API_BASE_URL}/club_board/post/`;
     const options = {
       method: 'POST',
       headers: {

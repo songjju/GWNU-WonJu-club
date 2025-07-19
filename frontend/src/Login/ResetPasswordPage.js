@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {useParams, useNavigate} from 'react-router-dom';
 import './ResetPasswordPage.css'; // CSS 파일 import
+import API_BASE_URL from '../config/apiConfig';
 
 const ResetPasswordPage = () => {
     const [email, setEmail] = useState('');
@@ -62,7 +63,7 @@ const ResetPasswordPage = () => {
     };
 
     const handleSendVerificationEmail = () => {
-        const url = 'http://localhost:8000/club_account/password/reset/';
+        const url = `${API_BASE_URL}/club_account/password/reset/`;
         const options = {
             method: 'POST',
             headers: {
@@ -105,7 +106,7 @@ const ResetPasswordPage = () => {
         // If all checks pass, proceed with password change
        
        try {
-            const response = fetch('http://localhost:8000/club_account/password/reset/confirm/', {
+            const response = fetch(`${API_BASE_URL}/club_account/password/reset/confirm/`, {
                 method: 'POST',
                 headers: {
                 'Content-Type': 'application/json',

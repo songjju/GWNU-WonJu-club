@@ -36,7 +36,12 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+    '192.168.0.14',  # 현재 사용 중인 IP
+]
 
 
 # Application definition
@@ -198,6 +203,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # For demo purposes only. Use a white list in the real world.
 CORS_ORIGIN_ALLOW_ALL = True  # False
+
+# CSRF 관련 설정
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://192.168.0.14:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://192.168.0.14:8000',
+]
 # CORS_ORIGIN_WHITELIST = (
 #     'http://localhost:3000', # react의 포트번호
 #     'http://127.0.0.1:3000',

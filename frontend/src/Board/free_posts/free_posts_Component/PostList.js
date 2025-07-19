@@ -5,6 +5,7 @@ import '../free_posts_Style/PostList.css';
 import { Table, Button, Input, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import API_BASE_URL from '../../../config/apiConfig'; // API 설정 임포트
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const handlePageChange = (page) => {
@@ -57,7 +58,7 @@ const PostList = () => {
 
   const fetchPosts = (page, search, sort) => {
     setIsLoading(true);
-    fetch(`http://127.0.0.1:8000/club_board/board_posts/FreeBoard/일반/${sort}/?page=${page}&search=${search}`, {
+    fetch(`${API_BASE_URL}/club_board/board_posts/FreeBoard/일반/${sort}/?page=${page}&search=${search}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

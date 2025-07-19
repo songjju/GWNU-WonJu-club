@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './SignUp.css'; // CSS 파일 임포트
+import API_BASE_URL from '../config/apiConfig'; // API 설정 임포트
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -31,45 +32,56 @@ const SignUp = () => {
   };
 
   const onSubmit = e => {
-    e.preventDefault();
+  e.preventDefault(); // form의 기본 제출 동작 방지
 
-    const error = validatePassword(password1, password2);
-    if (error) {
-      setPasswordError(error);
-      return;
-    }
+  const error = validatePassword(password1, password2);
+  if (error) {
+    setPasswordError(error);
+    return;
+  }
 
-    const user = {
-      email,
-      password1,
-      password2,
-      name,
-      student_id,
-      grade,
-      study,
-      gender,
-      phone
-    };
-
-    setIsLoading(true);
-    fetch('http://127.0.0.1:8000/club_account/registration/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(user)
-    })
-    .then(res => {
-      setIsLoading(false);
-      if (res.status >= 200 && res.status < 300) {
-        window.location.href = `/signup/email_confirm?email=${encodeURIComponent(email)}`;
-        alert('이메일 인증을 진행해 주세요.');
-      } else {
-        alert('회원가입 실패');
-        console.error('회원가입 실패:', res.status);
-      }
-    });
+  const user = {
+    email,
+    password1,
+    password2,
+    name,
+    student_id: parseInt(student_id), // 숫자로 변환
+    grade: parseInt(grade), // 숫자로 변환
+    study,
+    gender,
+    phone
   };
+
+  setIsLoading(true);
+  
+  fetch(`${API_BASE_URL}/club_account/registration/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(user)
+  })
+  .then(res => {
+    console.log('응답 상태:', res.status); // 디버깅용
+    setIsLoading(false);
+    
+    if (res.status >= 200 && res.status < 300) {
+      window.location.href = `/signup/email_confirm?email=${encodeURIComponent(email)}`;
+      alert('이메일 인증을 진행해 주세요.');
+    } else {
+      // 오류 응답의 내용을 확인
+      return res.json().then(errorData => {
+        alert('회원가입 실패: ' + JSON.stringify(errorData));
+        console.error('회원가입 실패:', res.status, errorData);
+      });
+    }
+  })
+  .catch(error => {
+    console.error('네트워크 오류:', error);
+    setIsLoading(false);
+    alert('네트워크 오류가 발생했습니다.');
+  });
+};
 
   return (
     <div className="signup-container py-5">

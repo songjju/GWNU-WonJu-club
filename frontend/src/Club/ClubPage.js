@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from "axios";
 import ClubHeader from "./Club_Component/Club_head.js";
 import ClubBody from "./Club_Component/Club_body.js";
+import API_BASE_URL from '../config/apiConfig'; // API 설정 임포트
 
 const ClubPage = () => {
   const { club_name } = useParams();  // URL에서 clubName 추출
@@ -12,7 +13,7 @@ const ClubPage = () => {
     if (club_name) {
       const fetchClubData = async () => {
         try {
-          const response = await axios.get(`http://localhost:8000/club_information/club/${club_name}/home`);
+          const response = await axios.get(`${API_BASE_URL}/club_information/club/${club_name}/home`);
           setClubInfo(response.data);  // 클럽 정보 업데이트
 
         } catch (error) {

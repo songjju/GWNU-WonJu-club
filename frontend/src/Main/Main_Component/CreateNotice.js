@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '../Main_Style/CreateNotice.css';
 import { Button, Input, Form, FormGroup, Label } from 'reactstrap';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../../config/apiConfig';
 
 const CreateNotice = () => {
   const [title, setTitle] = useState('');
@@ -15,7 +16,7 @@ const CreateNotice = () => {
 
   const handleCreate = () => {
     const token = localStorage.getItem('token');
-    fetch('http://localhost:8000/club_board/notice/', {
+    fetch(`${API_BASE_URL}/club_board/notice/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import React, { useState,useEffect } from 'react';
 import { useNavigate,useLocation } from 'react-router-dom';
 import '../free_posts_Style/WritePost.css'; 
+import API_BASE_URL from '../../../config/apiConfig'; 
 
 const WritePost = () => {
   const [club,setClub] = useState('');
@@ -41,7 +42,7 @@ const WritePost = () => {
     };
 
     console.log(post);
-    const url = 'http://127.0.0.1:8000/club_board/post/';
+    const url = `${API_BASE_URL}/club_board/post/`;
     const options = {
       method: 'POST',
       headers: {

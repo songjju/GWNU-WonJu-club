@@ -4,6 +4,7 @@ from dj_rest_auth.serializers import UserDetailsSerializer, PasswordChangeSerial
 from allauth.account.utils import setup_user_email
 from allauth.account.adapter import get_adapter
 from club_account.models import CustomUser
+from django.contrib.auth import get_user_model
 
 class CustomRegisterSerializer(RegisterSerializer):
     name = serializers.CharField(max_length=30)
@@ -37,6 +38,15 @@ class CustomRegisterSerializer(RegisterSerializer):
         adapter = get_adapter()
         user = adapter.new_user(request)
         self.cleaned_data = self.get_cleaned_data()
+    
+        # 중복 검사를 먼저 수행
+        User = get_user_model()
+        if User.objects.filter(email=self.cleaned_data['email']).exists():
+            raise serializers.ValidationError("이 이메일은 이미 사용 중입니다.")
+        if User.objects.filter(student_id=self.cleaned_data['student_id']).exists():
+            raise serializers.ValidationError("이 학번은 이미 사용 중입니다.")
+    
+        # 검사 통과 후 저장
         adapter.save_user(request, user, self, True)
         self.custom_signup(request, user)
         setup_user_email(request, user, [])

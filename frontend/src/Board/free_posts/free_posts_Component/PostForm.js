@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import API_BASE_URL from '../../../config/apiConfig';
 
 const PostForm = () => {
   const location = useLocation();
@@ -39,7 +40,7 @@ const PostForm = () => {
       // image: 추가 로직 필요
     };
 
-    const url = mode === 'edit' ? `http://127.0.0.1:8000/club_board/post_detail/${existingPost.id}/` : 'http://127.0.0.1:8000/club_board/post/';
+    const url = mode === 'edit' ? `${API_BASE_URL}/club_board/post_detail/${existingPost.id}/` : '${API_BASE_URL}/club_board/post/';
     const method = mode === 'edit' ? 'PATCH' : 'POST';
 
     const options = {

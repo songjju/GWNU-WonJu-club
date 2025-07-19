@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import EventCard from '../../Event/Event_Component/EventCard';
 import {useParams} from 'react-router';
 import ClubHeader from '../Club_Component/Club_head'
+import API_BASE_URL from '../../config/apiConfig'; // API 설정 임포트
 
 const ClubCreateEvent = ({ onCreateEvent }) => {
     const {club_name} = useParams(); 
@@ -34,7 +35,7 @@ const ClubCreateEvent = ({ onCreateEvent }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-      fetch('http://127.0.0.1:8000/club_board/event/', {
+      fetch(`${API_BASE_URL}/club_board/event/`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

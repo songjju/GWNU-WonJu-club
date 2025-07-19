@@ -4,6 +4,7 @@ import ClubNotice from './ClubNotice';
 import ClubAnalytics from './ClubAnalytics';
 import '../Main_Style/MainPage.css';
 import '../Main_Style/Responsive.css';
+import API_BASE_URL from '../../config/apiConfig';
 
 function MainPage() {
   const [categoryData, setCategoryData] = useState([]);
@@ -11,13 +12,13 @@ function MainPage() {
   
   useEffect(() => {
       // Fetch category data
-      fetch('http://localhost:8000/club_introduce/count_club_category/')
+      fetch(`${API_BASE_URL}/club_introduce/count_club_category/`)
           .then(response => response.json())
           .then(data => setCategoryData(data.results))
           .catch(error => console.error('Error fetching category data:', error));
 
       // Fetch type data
-      fetch('http://localhost:8000/club_introduce/count_club_type/')
+      fetch(`${API_BASE_URL}/club_introduce/count_club_type/`)
           .then(response => response.json())
           .then(data => setTypeData(data.results))
           .catch(error => console.error('Error fetching type data:', error));

@@ -8,6 +8,7 @@ import { Button } from 'react-bootstrap';
 import club_logo from '../Assets/club_logo.png';
 import club_background from '../Assets/image.jpg';
 import './ClubIntroducePage.css';
+import API_BASE_URL from '../config/apiConfig'; // API 설정 임포트
 
 // Dropdown 컴포넌트 정의
 function Dropdown({ value, onChange, options, label }) {
@@ -29,14 +30,14 @@ const ClubIntroducePage = () => {
   const [clubs, setClubs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const BASE_URL = "http://localhost:8000";
+  const BASE_URL = `${API_BASE_URL}`;
 
   // 동아리 목록을 가져오는 함수
   useEffect(() => {
     const debouncedFetchClubs = debounce(async () => {
       setIsLoading(true);
       const categoryPath = selectedCategory !== "전체" || selectedType !== "전체" ? `/category_club/${selectedCategory}/${selectedType}` : '/';
-      const url = `http://localhost:8000/club_introduce/club_list${categoryPath}`;
+      const url = `${API_BASE_URL}/club_introduce/club_list${categoryPath}`;
       try {
         const response = await axios.get(url);
         setClubs(response.data);

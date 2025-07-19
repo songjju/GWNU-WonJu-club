@@ -6,6 +6,7 @@ import { ProfileImage } from '../../styles';
 import '../Club_Style/Club_members.css'; // CSS 파일을 import합니다.
 import ClubHeader from './Club_head'; // ClubHeader 컴포넌트를 import합니다.
 import ProfileCard from '../Club_Card/club_profile_card'; // ClubHeader 
+import API_BASE_URL from '../../config/apiConfig';
 
 const ClubMembers = () => {
   const { club_name } = useParams();
@@ -16,7 +17,7 @@ const ClubMembers = () => {
     console.log(club_name);
     const fetchMembers = async () => {
       try {
-        const response = await axios.get(`http://localhost:8000/club_information/club/${club_name}/members`);
+        const response = await axios.get(`${API_BASE_URL}/club_information/club/${club_name}/members`);
         setMembers(response.data); // 가져온 회원 정보를 상태에 설정합니다.
       } catch (error) {
         console.error('Error fetching club members:', error);

@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableRow, Button, Typography } 
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import ClubHeader from './Club_head';
 import '../Club_Style/Club_board.css'
+import API_BASE_URL from '../../config/apiConfig'; // API 설정 임포트
 
 const ClubPosts = () => {
   const [posts, setPosts] = useState([]);
@@ -27,7 +28,7 @@ const ClubPosts = () => {
   };
 
   useEffect(() => {
-    let url = `http://127.0.0.1:8000/club_board/board_posts/${clubName}/${category}/${order}/?page=${currentPage}`;
+    let url = `${API_BASE_URL}/club_board/board_posts/${clubName}/${category}/${order}/?page=${currentPage}`;
     let options = {
       method: 'GET',
       headers: {

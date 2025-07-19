@@ -5,6 +5,7 @@ import { Table, Button, Input, Dropdown, DropdownToggle, DropdownMenu, DropdownI
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import API_BASE_URL from '../../config/apiConfig';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const handlePageChange = (page) => {
@@ -64,7 +65,7 @@ const EventList = () => {
 
   const fetchEvents = (page, search, sort, tag) => {
     setIsLoading(true);
-    fetch(`http://localhost:8000/events/?page=${page}&search=${search}&ordering=${sort}&tag=${tag}`, { //올바른 URL 입력
+    fetch(`${API_BASE_URL}/events/?page=${page}&search=${search}&ordering=${sort}&tag=${tag}`, { //올바른 URL 입력
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ const EventList = () => {
   };
 
   const fetchTags = () => {
-    fetch(`http://localhost:8000/event_tags/`, { //올바른 URL 입력
+    fetch(`${API_BASE_URL}/event_tags/`, { //올바른 URL 입력
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

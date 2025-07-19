@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import "./Mypage_Style/Editinformation.css";
 import { Form, Button, Container, Row, Col } from 'react-bootstrap';
+import API_BASE_URL from '../config/apiConfig'; // API 설정 임포트
 
 const Editinformation = () => {
   const location = useLocation();
@@ -35,7 +36,7 @@ const Editinformation = () => {
             // gender: '남자 ',
         };
 
-        const response = await fetch('http://127.0.0.1:8000/club_account/user/', {
+        const response = await fetch(`${API_BASE_URL}/club_account/user/`, {
             method: 'PATCH',
             headers: {
                 'Authorization': `Token ${token}`,

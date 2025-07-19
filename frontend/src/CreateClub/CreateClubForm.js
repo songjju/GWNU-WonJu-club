@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import "./CreateClub.css";
 import defaultImage from "../Assets/default_image.png";
 import defaultLogo from "../Assets/club_logo.png";
+import API_BASE_URL from "../config/apiConfig";
 
 const CreateClubForm = ({ addClub }) => {
   const [clubName, setClubName] = useState("");
@@ -32,7 +33,7 @@ const CreateClubForm = ({ addClub }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/club_intoduce/apply_club/",
+        `${API_BASE_URL}/club_intoduce/apply_club/`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );

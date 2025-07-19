@@ -4,6 +4,8 @@ import axios from 'axios';
 import "../Club_Style/Club_gallery.css";
 import ClubHeader from "./Club_head.js"
 import { Button } from 'react-bootstrap';
+import API_BASE_URL from '../../config/apiConfig.js';
+
 const ClubGallery = () => {
   const { club_name } = useParams();
   const [albums, setAlbums] = useState([]);
@@ -18,7 +20,7 @@ const ClubGallery = () => {
   useEffect(() => {
     const fetchAlbums = async () => {
       try {
-        const response = await axios.get(`http://localhost:8000/club_information/club/${club_name}/albums/`, {
+        const response = await axios.get(`${API_BASE_URL}/club_information/club/${club_name}/albums/`, {
           params: {
             search_type: searchOption,
             search_query: searchText

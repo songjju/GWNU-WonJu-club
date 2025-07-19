@@ -5,6 +5,7 @@ import Modal from 'react-modal';
 import './club_management.css';
 import defaultImage from "../profile.jpg";
 import ClubHeader from '../Club/Club_Component/Club_head.js'
+import API_BASE_URL from '../config/apiConfig.js';
 
 const ClubManagementPage = () => {
   const [isManageMode, setIsManageMode] = useState(false);
@@ -62,7 +63,7 @@ const ClubManagementPage = () => {
     const fetchClubData = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get(`http://localhost:8000/club_management/club/${club_name}/`, {
+        const response = await axios.get(`${API_BASE_URL}/club_management/club/${club_name}/`, {
           headers: {
             'Authorization': `Token ${token}`
           }
@@ -95,7 +96,7 @@ const ClubManagementPage = () => {
     setBtnMode(btn);
 
     try {
-      const response = await axios.get(`http://localhost:8000/club_management/club/${club_name}/image/`, {
+      const response = await axios.get(`${API_BASE_URL}/club_management/club/${club_name}/image/`, {
         params: {
           image: type
         },
@@ -148,7 +149,7 @@ const ClubManagementPage = () => {
     formData.append('image', newLogo);
 
     try {
-      const response = await axios.post(`http://localhost:8000/club_management/club/${club_name}/image/`, formData, {
+      const response = await axios.post(`${API_BASE_URL}/club_management/club/${club_name}/image/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Token ${token}`
@@ -172,7 +173,7 @@ const ClubManagementPage = () => {
     formData.append('image', blob, image);
 
     try {
-      const response = await axios.patch(`http://localhost:8000/club_management/club/${club_name}/image/`, formData, {
+      const response = await axios.patch(`${API_BASE_URL}/club_management/club/${club_name}/image/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Token ${token}`
@@ -211,7 +212,7 @@ const ClubManagementPage = () => {
     // formData.append('image', blob, image);
 
     try {
-      const response = await axios.delete(`http://localhost:8000/club_management/club/${club_name}/image/`, {
+      const response = await axios.delete(`${API_BASE_URL}/club_management/club/${club_name}/image/`, {
         data: { image: image },
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -249,7 +250,7 @@ const ClubManagementPage = () => {
     formData.append('image', newPhoto);
 
     try {
-      const response = await axios.post(`http://localhost:8000/club_management/club/${club_name}/image/`, formData, {
+      const response = await axios.post(`${API_BASE_URL}/club_management/club/${club_name}/image/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Token ${token}`
@@ -273,7 +274,7 @@ const ClubManagementPage = () => {
     formData.append('image', blob, image);
 
     try {
-      const response = await axios.patch(`http://localhost:8000/club_management/club/${club_name}/image/`, formData, {
+      const response = await axios.patch(`${API_BASE_URL}/club_management/club/${club_name}/image/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Token ${token}`
@@ -312,7 +313,7 @@ const ClubManagementPage = () => {
     // formData.append('image', blob, image);
 
     try {
-      const response = await axios.delete(`http://localhost:8000/club_management/club/${club_name}/image/`, {
+      const response = await axios.delete(`${API_BASE_URL}/club_management/club/${club_name}/image/`, {
         data: { image: image },
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -397,7 +398,7 @@ const ClubManagementPage = () => {
   const handleIntroductionUpdate = async () => {
     if (newIntroduction) {
       try {
-        const response = await axios.patch(`http://localhost:8000/club_management/club/${club_name}/introducation/`,
+        const response = await axios.patch(`${API_BASE_URL}/club_management/club/${club_name}/introducation/`,
           { introduction: newIntroduction },
           {
             headers: {
@@ -425,7 +426,7 @@ const ClubManagementPage = () => {
 
   const approveMember = async (id) => {
     try {
-      await axios.patch(`http://localhost:8000/club_management/club/${club_name}/member/${id}/`, null, {
+      await axios.patch(`${API_BASE_URL}/club_management/club/${club_name}/member/${id}/`, null, {
         headers: {
           'Authorization': `Token ${token}`
         }
@@ -442,7 +443,7 @@ const ClubManagementPage = () => {
 
   const rejectMember = async (id) => {
     try {
-      await axios.delete(`http://localhost:8000/club_management/club/${club_name}/member/${id}/`, {
+      await axios.delete(`${API_BASE_URL}/club_management/club/${club_name}/member/${id}/`, {
         headers: {
           'Authorization': `Token ${token}`
         }
@@ -463,7 +464,7 @@ const ClubManagementPage = () => {
 
     try {
       await axios.patch(
-        `http://localhost:8000/club_management/club/${club_name}/member/${memberId}/manage/`,
+        `${API_BASE_URL}/club_management/club/${club_name}/member/${memberId}/manage/`,
         { role: newRole },
         {
           headers: {
@@ -494,7 +495,7 @@ const ClubManagementPage = () => {
 
     try {
       await axios.delete(
-        `http://localhost:8000/club_management/club/${club_name}/member/${memberId}/manage/`,
+        `${API_BASE_URL}/club_management/club/${club_name}/member/${memberId}/manage/`,
         {
           headers: {
             'Authorization': `Token ${token}`
@@ -513,7 +514,7 @@ const ClubManagementPage = () => {
 
   const handleClubDelete = async () => {
     try {
-      const response = await axios.delete(`http://localhost:8000/club_management/club/${club_name}/delete`, {
+      const response = await axios.delete(`${API_BASE_URL}/club_management/club/${club_name}/delete`, {
         headers: {
           'Authorization': `Token ${token}`
         }

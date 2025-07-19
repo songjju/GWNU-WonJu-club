@@ -1,7 +1,8 @@
 import React,{useState, useEffect} from 'react';
 import { handleComment, createComment } from './Data';
-
+import API_BASE_URL from '../../../config/apiConfig'; // API 설정 임포트
 import '../free_posts_Style/Comment.css';
+
 const Comment = ({post_id, token}) => {
   const [comments, setComments] = useState([]);  // 댓글 목록 상태
   const [count, setCount] = useState(null);      // 댓글 개수
@@ -75,7 +76,7 @@ const Comment = ({post_id, token}) => {
 
   // 특정 게시글에 대한 모든 댓글 가져오기 
   const getCommentsData = () => {  // TODO post_id,token 받기
-    const url = `http://127.0.0.1:8000/club_board/comment_list/${post_id}`; 
+    const url = `${API_BASE_URL}/club_board/comment_list/${post_id}`; 
     const options = {
         method: 'GET',
         headers: {

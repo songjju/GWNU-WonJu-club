@@ -3,6 +3,7 @@ import { Container, Button, Row, Col } from "react-bootstrap";
 import axios from 'axios';
 import defaultImage from "../Mypage/profile.jpg";
 import logo from "../Mypage/logo.png";
+import API_BASE_URL from '../config/apiConfig';
 
 const UserDetails = () => {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -19,7 +20,7 @@ const UserDetails = () => {
 
   const getUserDetails = async () => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/club_account/user/', {
+      const response = await axios.get(`${API_BASE_URL}/club_account/user/`, {
         headers: {
           Authorization: `Token ${token}`
         }

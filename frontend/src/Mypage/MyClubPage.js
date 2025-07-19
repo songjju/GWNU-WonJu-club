@@ -1,12 +1,14 @@
 import React, {useState} from 'react';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config/apiConfig';
+
 const MyClubPage = ({ myClubList }) => {
     const [ClubList, setMyClubList] = useState(myClubList);
     const navigate = useNavigate();
 
     const handleDropClub = async (id,job) => {
         try {
-            await fetch(`http://127.0.0.1:8000/club_introduce/drop_club/${id}`, {
+            await fetch(`${API_BASE_URL}/club_introduce/drop_club/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

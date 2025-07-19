@@ -6,6 +6,7 @@ import MypageHome from './MypageHome.js';
 import Editinformation from './EditInformation.js';
 import PasswordChangeForm from './ChangePassword.js';
 import MyClubPage from './MyClubPage.js';
+import API_BASE_URL from '../config/apiConfig'; // API 설정 임포트
 
 const MyPage = () => {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -25,7 +26,7 @@ const MyPage = () => {
 
   const getUserDetails = async () => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/club_account/user/', {
+      const response = await axios.get(`${API_BASE_URL}/club_account/user/`, {
         headers: {
           Authorization: `Token ${token}`
         }
@@ -41,7 +42,7 @@ const MyPage = () => {
 
   const fetchMyClubList = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/club_introduce/myclub_list/', {
+      const response = await fetch(`${API_BASE_URL}/club_introduce/myclub_list/`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Token ${localStorage.getItem('token')}`

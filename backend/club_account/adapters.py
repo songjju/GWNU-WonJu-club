@@ -1,12 +1,11 @@
 from allauth.account.adapter import DefaultAccountAdapter
-
+from django.contrib.auth import get_user_model
 
 class CustomAccountAdapter(DefaultAccountAdapter):
-    # user의 추가적인 데이터를 db에 저장하기 위한 어뎁터
-
+    
     def save_user(self, request, user, form, commit=True):
-        # 기본 저장 필드:  username, email
-        user = super().save_user(request, user, form, False)
+        # 기본 저장 필드: username, email
+        user = super().save_user(request, user, form, False)  # commit=False로 변경
         data = form.cleaned_data
 
         user.name = data.get('name')
@@ -16,5 +15,6 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         user.gender = data.get("gender")
         user.phone = data.get("phone")
 
-        user.save()
+        if commit:
+            user.save()
         return user

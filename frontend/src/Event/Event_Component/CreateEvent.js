@@ -3,6 +3,7 @@ import { Form, Button, InputGroup, FormControl, Alert } from 'react-bootstrap';
 import axios from 'axios'; // Axios 라이브러리 import
 import 'bootstrap/dist/css/bootstrap.min.css';
 import EventCard from '../Event_Component/EventCard';
+import API_BASE_URL from '../../config/apiConfig';
 
 const CreateEvent = ({ onCreateEvent }) => {
   const [title, setTitle] = useState('');
@@ -26,7 +27,7 @@ const CreateEvent = ({ onCreateEvent }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-      fetch('http://127.0.0.1:8000/club_board/event/', {
+      fetch(`${API_BASE_URL}/club_board/event/`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

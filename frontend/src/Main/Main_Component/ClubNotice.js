@@ -5,6 +5,7 @@ import { Table, Button, Input, Dropdown, DropdownToggle, DropdownMenu, DropdownI
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import API_BASE_URL from '../../config/apiConfig'; // API 설정 임포트
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const handlePageChange = (page) => {
@@ -67,7 +68,7 @@ const ClubNotice = () => {
 
   const fetchNotices = () => {
     setIsLoading(true);
-    fetch(`http://localhost:8000/club_board/notice/?page=${currentPage}&search=${searchTerm}&ordering=${sortOrder}`, {
+    fetch(`${API_BASE_URL}/club_board/notice/?page=${currentPage}&search=${searchTerm}&ordering=${sortOrder}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { loginSuccess, logout } from '../redux/actions/authActions';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css'; // CSS 파일 임포트
+import API_BASE_URL from '../config/apiConfig';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +31,7 @@ const LoginPage = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/club_account/login/', {
+      const response = await fetch(`${API_BASE_URL}/club_account/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

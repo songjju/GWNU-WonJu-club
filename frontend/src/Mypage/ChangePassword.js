@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Mypage_Style/ChangePassword.css'
 import { Col, Form, Button } from 'react-bootstrap';
+import API_BASE_URL from '../config/apiConfig'; // API 설정 임포트
 
 const PasswordChangeForm = () => {
   const [newPassword, setNewPassword] = useState('');
@@ -26,7 +27,7 @@ const PasswordChangeForm = () => {
     }
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/club_account/password/change/', {
+      const response = await axios.post(`${API_BASE_URL}/club_account/password/change/`, {
         new_password1: newPassword,
         new_password2: repeatPassword
       }, {
