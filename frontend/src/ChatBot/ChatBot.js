@@ -13,9 +13,17 @@ const ChatBot = () => {
 
   // API_BASE_URL을 기반으로 WebSocket URL 생성
   const getWebSocketUrl = () => {
-    // HTTP/HTTPS를 WS/WSS로 변환
-    const wsUrl = API_BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://') + '/ws/chat/';
+    // API_BASE_URL에서 프로토콜과 호스트 추출
+    const url = new URL(API_BASE_URL);
+    const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = url.host;
+  
+    const wsUrl = `${protocol}//${host}/ws/chat/`;
+    console.log('🔌 생성된 WebSocket URL:', wsUrl);
     return wsUrl;
+    // HTTP/HTTPS를 WS/WSS로 변환
+    // const wsUrl = API_BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://') + '/ws/chat/';
+    // return wsUrl;
   };
 
   const handleUserInput = useCallback((e) => {

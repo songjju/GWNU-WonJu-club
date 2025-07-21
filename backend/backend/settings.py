@@ -41,6 +41,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '0.0.0.0',
     '192.168.0.14',  # 현재 사용 중인 IP
+    '192.168.0.4'
 ]
 
 
@@ -116,10 +117,21 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# MySQL 설정 추가
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('DB_NAME', 'gwnu_club_db'),
+        'USER': os.environ.get('DB_USER', 'gwnu_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'gwnu_password'),
+        'HOST': os.environ.get('DB_HOST', 'db'),  # 'localhost' 대신 'db' 사용
+        'PORT': os.environ.get('DB_PORT', '3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            # TCP/IP 연결 강제 사용
+            'host': os.environ.get('DB_HOST', 'db'),
+        }
     }
 }
 
@@ -212,6 +224,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'http://192.168.0.14:8000',
+    'http://192.168.0.4:8000',
 ]
 # CORS_ORIGIN_WHITELIST = (
 #     'http://localhost:3000', # react의 포트번호
@@ -284,3 +297,8 @@ ACCOUNT_EMAIL_SUBJECT_PREFIX = ""  # 이메일에 자동으로 표시되는 사�
 ASGI_APPLICATION = 'backend.asgi.application'
 
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
+}

@@ -1,6 +1,7 @@
 // frontend/src/config/apiConfig.js
 // 현재 환경에 따라 API URL을 동적으로 설정
 
+
 const getApiBaseUrl = () => {
   // 환경 변수가 설정되어 있으면 우선 사용
   if (process.env.REACT_APP_API_URL) {

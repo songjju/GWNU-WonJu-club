@@ -49,7 +49,7 @@ const Editinformation = () => {
 
         if (response.ok) {
             alert('수정 완료되었습니다.');
-            window.location.replace('http://localhost:3000/mypage');
+            window.location.replace(`${API_BASE_URL}/mypage`);
         } else {
             console.error('수정 실패:', data);
         }

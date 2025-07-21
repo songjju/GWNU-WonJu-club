@@ -1,35 +1,82 @@
-# version: "3.0"
-# 버전 정의, 서비스 정의, 볼륨 정의, 네트워크 정의
+version: "3.8"
 
 services:
+  db:
+    image: mysql:8.0
+    container_name: gwnu-club-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: gwnu_club_db
+      MYSQL_USER: gwnu_user
+      MYSQL_PASSWORD: gwnu_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: always
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --bind-address=0.0.0.0
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "gwnu_user", "-pgwnu_password"]
+      timeout: 20s
+      retries: 10
+      interval: 30s
+    networks:
+      - gwnu-network
+
   frontend:
-    # image: ./frontend
     build: ./frontend/
     container_name: gwnu-club-frontend
     ports:
-          - "3000:3000"
+      - "3000:3000"
     command: ["npm", "start"]
     volumes:
       - ./frontend:/App/frontend
-
-
+    networks:
+      - gwnu-network
+    depends_on:
+      - backend
 
   backend:
-    # image: ./backend
     build: ./backend/
     container_name: gwnu-club-backend
     ports:
       - "8000:8000"
-    # 컨테이너가 시작될 때 실행할 명령
-    command: ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
-    # command: 
-    #   - bash
-    #   - -c
-    #   - |
-    #     python manage.py migrate
-    #     python manage.py runserver localhost:8000
+    command: 
+      - bash
+      - -c
+      - |
+        echo "Waiting for MySQL..."
+        while ! nc -z db 3306; do
+          echo "MySQL not ready, waiting..."
+          sleep 2
+        done
+        echo "MySQL is ready!"
+        
+        echo "Running migrations..."
+        python manage.py makemigrations
+        python manage.py migrate
 
-    # 실시간 업데이트 호스트, 컨테이너 사이 앱을 연결한다.
+        echo "Starting Django server with Daphne..."
+        daphne -b 0.0.0.0 -p 8000 backend.asgi:application
     volumes:
       - ./backend:/App/backend
-    # restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_NAME=gwnu_club_db
+      - DB_USER=gwnu_user
+      - DB_PASSWORD=gwnu_password
+      - DB_PORT=3306
+    networks:
+      - gwnu-network
+
+volumes:
+  mysql_data:
+
+networks:
+  gwnu-network:
+    driver: bridge

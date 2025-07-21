@@ -41,7 +41,7 @@ const PasswordChangeForm = () => {
 
       if (response.status === 200) {
         // Success message or redirect to another page
-        window.location.replace('http://localhost:3000/login');
+        window.location.replace(`${API_BASE_URL}/login`);
       } else {
         setErrorMessage(response.data.detail);
       }

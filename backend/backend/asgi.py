@@ -19,7 +19,7 @@ django.setup()
 # channels 라우팅과 미들웨어는 Django 초기화 이후에 가져와야 합니다.
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.security.websocket import AllowedHostsOriginValidator
+from channels.security.websocket import AllowedHostsOriginValidator, OriginValidator
 from ai_chatbot import routing
 
 application = ProtocolTypeRouter({
@@ -27,9 +27,9 @@ application = ProtocolTypeRouter({
     "websocket":
         AuthMiddlewareStack(
             AllowedHostsOriginValidator(
-                URLRouter(
-                    routing.websocket_urlpatterns
-                )
+                URLRouter(routing.websocket_urlpatterns),
             ),
         ),
 })
+
+

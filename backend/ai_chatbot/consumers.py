@@ -30,28 +30,67 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # 전처리 객체 생성
-        self.p = Preprocess(word2index_dic='ai_chatbot/train_tools/dict/chatbot_dict.bin',
-               userdic='ai_chatbot/utils/user_dic.tsv')
-        # 의도 파악 모델
-        # self.intent = IntentModel(model_name='ai_chatbot/model/intent/intent_model.keras', preprocess=self.p)
-        self.intent = IntentModel(model_name='ai_chatbot/model/intent_model_new.h5', preprocess=self.p)
+        try:
+            print("=== ChatConsumer 초기화 시작 ===")
+            
+            print("Preprocess 초기화 중...")
+            # 전처리 객체 생성
+            self.p = Preprocess(word2index_dic='ai_chatbot/train_tools/dict/chatbot_dict.bin',
+                   userdic='ai_chatbot/utils/user_dic.tsv')
+            print("Preprocess 초기화 완료")
 
-        # 유사도 분석 모델
-        self.sim = SimModel(preprocess=self.p)
+            print("IntentModel 로딩 중...")
+            # 의도 파악 모델
+            # self.intent = IntentModel(model_name='ai_chatbot/model/intent/intent_model.keras', preprocess=self.p)
+            self.intent = IntentModel(model_name='ai_chatbot/model/intent_model_new.h5', preprocess=self.p)
+            print("IntentModel 로딩 완료")
 
-        # 개체명 인식 모델
-        self.ner = NerModel(model_name='ai_chatbot/model/ner_model_new.h5', proprocess=self.p)
+            print("SimModel 로딩 중...")
+            # 유사도 분석 모델
+            self.sim = SimModel(preprocess=self.p)
+            print("SimModel 로딩 완료")
+
+            print("NerModel 로딩 중...")
+            # 개체명 인식 모델
+            self.ner = NerModel(model_name='ai_chatbot/model/ner_model_new.h5', proprocess=self.p)
+            print("NerModel 로딩 완료")
+
+            print("=== ChatConsumer 초기화 완료 ===")
+
+        except Exception as e:
+            print(f"ChatConsumer 초기화 오류: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
 
     async def connect(self):
-        await self.accept()
+        try:
+            print("=== WebSocket connect() 시작 ===")
+            await self.accept()
+            print("=== WebSocket connect() 완료 ===")
+        except Exception as e:
+            print(f"WebSocket connect() 오류: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
 
     async def accept(self, subprotocol=None):
-        await super().accept(subprotocol=subprotocol)
-        start_message = ("안녕하세요! 릉주대 챗봇 강원동입니다. 저희는 사이트 내 데이터에 기반하고 있지만, 데이터가 업데이트 되지 않아 달라진 부분이 있을 수 있으니, 중요한 내용은 꼭 "
-                         "해당 동아리에 문의하시기 바랍니다. 무엇을 도와드릴까요?")
-        await self.send_json({"Answer": start_message})
+        try:
+            print("=== WebSocket accept() 시작 ===")
+            await super().accept(subprotocol=subprotocol)
+            print("=== super().accept() 완료 ===")
 
+            start_message = ("안녕하세요! 릉주대 챗봇 강원동입니다. 저희는 사이트 내 데이터에 기반하고 있지만, 데이터가 업데이트 되지 않아 달라진 부분이 있을 수 있으니, 중요한 내용은 꼭 "
+                             "해당 동아리에 문의하시기 바랍니다. 무엇을 도와드릴까요?")
+            print("=== 시작 메시지 전송 중 ===")
+            await self.send_json({"Answer": start_message})
+            print("=== 시작 메시지 전송 완료 ===")
+            print("=== WebSocket accept() 완료 ===")
+        except Exception as e:
+            print(f"WebSocket accept() 오류: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
 
     async def disconnect(self, close_code):
         pass
