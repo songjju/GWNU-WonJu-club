@@ -302,3 +302,10 @@ CHANNEL_LAYERS = {
         'BACKEND': 'channels.layers.InMemoryChannelLayer'
     }
 }
+
+# WebSocket 타임아웃 설정
+ASGI_APPLICATION = 'backend.asgi.application'
+
+# 🔧 추가: WebSocket 설정
+WEBSOCKET_ACCEPT_ALL = True
+WEBSOCKET_TIMEOUT = 30  # 30초 타임아웃
