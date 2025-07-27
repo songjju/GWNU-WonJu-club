@@ -52,7 +52,7 @@ jobs:
           safety check
 
       - name: 🔒 Docker image security scan
-        uses: aquasec/trivy-action@master
+        uses: aquasec/trivy-action@0.20.0
         with:
           scan-type: 'fs'
           scan-ref: './backend'
@@ -60,7 +60,7 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -574,7 +574,7 @@ jobs:
                     }
                   ],
                   "footer": "GitHub Actions",
-                  "ts": ${{ github.event.head_commit.timestamp && github.event.head_commit.timestamp || github.event.repository.updated_at }}
+                  "ts": ${{ github.event.head_commit.timestamp != null && github.event.head_commit.timestamp || github.event.repository.updated_at }}
                 }
               ]
             }
@@ -611,7 +611,8 @@ jobs:
             Please check the GitHub Actions logs for details:
             ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
             
-            Time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+            Timestamp: ${{ github.event.head_commit.timestamp || github.run_id }}
+            Triggered at: ${{ github.event.repository.updated_at }}
 
       - name: 📊 Update deployment status
         if: always()
