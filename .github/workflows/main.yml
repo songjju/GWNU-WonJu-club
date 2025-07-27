@@ -40,6 +40,7 @@ jobs:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         run: |
           python scripts/env-validator.py
           echo "valid=true" >> $GITHUB_OUTPUT
