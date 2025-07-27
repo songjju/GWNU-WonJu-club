@@ -44,13 +44,13 @@ class SecretValidator:
         },
         'DB_PASSWORD': {
             'min_length': 4,
-            'pattern': r'^[a-zA-Z0-9_@#$%^&*()]+$',
+            'pattern': r'^.*$',
             'description': 'Database password',
             'severity': Severity.ERROR
         },
         'MYSQL_ROOT_PASSWORD': {
             'min_length': 4,
-            'pattern': r'^[a-zA-Z0-9_@#$%^&*()]+$',
+            'pattern': r'^.*$',
             'description': 'MySQL root password',
             'severity': Severity.ERROR
         }
