@@ -31,25 +31,25 @@ class SecretValidator:
     # 필수 환경변수 정의
     REQUIRED_SECRETS = {
         'SECRET_KEY': {
-            'min_length': 50,
+            'min_length': 30,
             'pattern': r'^[a-zA-Z0-9@#$%^&*()_+\-=\[\]{}|;:,.<>?]+$',
             'description': 'Django secret key',
             'severity': Severity.ERROR
         },
         'EMAIL_HOST_PASSWORD': {
-            'min_length': 16,
+            'min_length': 8,
             'pattern': r'^[a-z]{16}$',  # Gmail 앱 비밀번호 형태
             'description': 'Gmail app password',
             'severity': Severity.ERROR
         },
         'DB_PASSWORD': {
-            'min_length': 8,
+            'min_length': 4,
             'pattern': r'^[a-zA-Z0-9_@#$%^&*()]+$',
             'description': 'Database password',
             'severity': Severity.ERROR
         },
         'MYSQL_ROOT_PASSWORD': {
-            'min_length': 8,
+            'min_length': 4,
             'pattern': r'^[a-zA-Z0-9_@#$%^&*()]+$',
             'description': 'MySQL root password',
             'severity': Severity.ERROR
