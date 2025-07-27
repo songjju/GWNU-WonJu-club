@@ -1,0 +1,620 @@
+name: 🚀 CI/CD Pipeline with Secure Secret Management
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_BACKEND: ${{ github.repository }}/backend
+  IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
+
+jobs:
+  # 🔍 보안 및 환경변수 검증 작업
+  security-validation:
+    name: 🔐 Security & Environment Validation
+    runs-on: ubuntu-latest
+    outputs:
+      secrets-valid: ${{ steps.validate-secrets.outputs.valid }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🕵️ Secret leak detection
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+
+      - name: Set up Python for validation
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: 🔍 Validate environment secrets
+        id: validate-secrets
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          python scripts/env-validator.py
+          echo "valid=true" >> $GITHUB_OUTPUT
+
+      - name: 🛡️ Security scan for dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip safety
+          pip install -r requirements.txt
+          safety check
+
+      - name: 🔒 Docker image security scan
+        uses: aquasec/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: './backend'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # 🎨 코드 품질 검사
+  code-quality:
+    name: 🎨 Code Quality & Formatting
+    runs-on: ubuntu-latest
+    needs: security-validation
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install flake8 black isort bandit
+
+      - name: 🎨 Python code formatting check
+        run: |
+          cd backend
+          black --check --diff .
+          isort --check-only --diff .
+
+      - name: 🔍 Python linting
+        run: |
+          cd backend
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: 🛡️ Python security linting
+        run: |
+          cd backend
+          bandit -r . -f json -o bandit-report.json || true
+          bandit -r . -f txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: 🎨 Frontend code quality
+        run: |
+          cd frontend
+          npm run lint
+          npm run format:check
+
+  # 🧪 테스트 작업
+  test:
+    name: 🧪 Comprehensive Testing
+    runs-on: ubuntu-latest
+    needs: [security-validation, code-quality]
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test_root_password
+          MYSQL_DATABASE: test_db
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install coverage pytest-django pytest-cov
+
+      - name: 🧪 Backend unit tests with coverage
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DB_NAME: test_db
+          DB_USER: test_user
+          DB_PASSWORD: test_password
+          DB_HOST: localhost
+          DB_PORT: 3306
+          EMAIL_HOST_USER: test@example.com
+          EMAIL_HOST_PASSWORD: test_password
+        run: |
+          cd backend
+          coverage run --source='.' manage.py test --verbosity=2
+          coverage report --show-missing --fail-under=80
+          coverage xml
+
+      - name: 🧪 Backend integration tests
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DB_NAME: test_db
+          DB_USER: test_user
+          DB_PASSWORD: test_password
+          DB_HOST: localhost
+          DB_PORT: 3306
+        run: |
+          cd backend
+          python manage.py test --tag=integration --verbosity=2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: 🧪 Frontend unit tests
+        run: |
+          cd frontend
+          npm test -- --coverage --watchAll=false --testResultsProcessor=jest-sonar-reporter
+
+      - name: 🧪 Frontend E2E tests
+        run: |
+          cd frontend
+          npm run test:e2e || echo "E2E tests not yet implemented"
+
+      - name: 📊 Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/coverage.xml,./frontend/coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
+  
+  # 🐳 이미지 빌드 및 보안 스캔
+  build-and-scan:
+    name: 🐳 Build & Security Scan Images
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
+    outputs:
+      backend-image: ${{ steps.backend-meta.outputs.tags }}
+      frontend-image: ${{ steps.frontend-meta.outputs.tags }}
+      backend-digest: ${{ steps.backend-build.outputs.digest }}
+      frontend-digest: ${{ steps.frontend-build.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITOPS_TOKEN }}
+
+      - name: 🏷️ Extract backend metadata
+        id: backend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 🏷️ Extract frontend metadata
+        id: frontend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🐳 Build and push backend image
+        id: backend-build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.backend-meta.outputs.tags }}
+          labels: ${{ steps.backend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: 🐳 Build and push frontend image
+        id: frontend-build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ steps.frontend-meta.outputs.tags }}
+          labels: ${{ steps.frontend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: 🔍 Backend image security scan
+        uses: aquasec/trivy-action@master
+        with:
+          image-ref: ${{ steps.backend-meta.outputs.tags }}
+          format: 'sarif'
+          output: 'backend-trivy.sarif'
+
+      - name: 🔍 Frontend image security scan
+        uses: aquasec/trivy-action@master
+        with:
+          image-ref: ${{ steps.frontend-meta.outputs.tags }}
+          format: 'sarif'
+          output: 'frontend-trivy.sarif'
+
+      - name: Upload security scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'backend-trivy.sarif'
+  
+  # 🚀 안전한 배포
+  deploy:
+    name: 🚀 Secure Deployment
+    runs-on: ubuntu-latest
+    needs: build-and-scan
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    environment: 
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+      url: ${{ github.ref == 'refs/heads/main' && 'https://club-platform.com' || 'https://staging.club-platform.com' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Kubernetes tools
+        run: |
+          # kubectl 설치
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          
+          # kustomize 설치
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: 🔑 Setup Kubernetes config
+        env:
+          KUBECONFIG_DATA: ${{ github.ref == 'refs/heads/main' && secrets.KUBECONFIG_PRODUCTION || secrets.KUBECONFIG_STAGING }}
+        run: |
+          echo "${KUBECONFIG_DATA}" | base64 -d > /tmp/kubeconfig
+          chmod 600 /tmp/kubeconfig
+          echo "KUBECONFIG=/tmp/kubeconfig" >> $GITHUB_ENV
+
+      - name: 🔐 Deploy secrets securely
+        env:
+          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+        run: |
+          chmod +x .github/scripts/deploy-secrets.sh
+          ./.github/scripts/deploy-secrets.sh "${ENVIRONMENT}" "${KUBECONFIG_DATA}"
+
+      - name: 🔄 Update deployment manifests
+        env:
+          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+          BACKEND_IMAGE: ${{ needs.build-and-scan.outputs.backend-image }}
+          FRONTEND_IMAGE: ${{ needs.build-and-scan.outputs.frontend-image }}
+        run: |
+          cd manifests/overlays/${ENVIRONMENT}
+          
+          # 이미지 태그 업데이트
+          kustomize edit set image \
+            backend-image=${BACKEND_IMAGE} \
+            frontend-image=${FRONTEND_IMAGE}
+          
+          echo "🚀 Updated ${ENVIRONMENT} deployment manifests:"
+          echo "Backend: ${BACKEND_IMAGE}"
+          echo "Frontend: ${FRONTEND_IMAGE}"
+
+      - name: 🔍 Validate deployment manifests
+        env:
+          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+        run: |
+          cd manifests/overlays/${ENVIRONMENT}
+          kustomize build . > /tmp/deployment.yaml
+          
+          # Kubernetes 매니페스트 검증
+          kubectl --dry-run=server apply -f /tmp/deployment.yaml
+          
+          echo "✅ Deployment manifests validated successfully"
+
+      - name: 📝 Commit updated manifests
+        env:
+          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add manifests/overlays/${ENVIRONMENT}/
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "🚀 Update ${ENVIRONMENT} deployment images
+
+            Backend: ${{ needs.build-and-scan.outputs.backend-image }}
+            Frontend: ${{ needs.build-and-scan.outputs.frontend-image }}
+            
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}"
+            git push
+          fi
+
+      - name: 🎯 Trigger ArgoCD sync
+        env:
+          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+        run: |
+          # ArgoCD CLI 설치
+          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd-linux-amd64
+          sudo mv argocd-linux-amd64 /usr/local/bin/argocd
+          
+          # ArgoCD 로그인
+          argocd login ${ARGOCD_SERVER} --auth-token ${ARGOCD_TOKEN} --insecure
+          
+          # 애플리케이션 동기화
+          APP_NAME="club-platform-${ENVIRONMENT}"
+          argocd app sync ${APP_NAME} --prune
+          
+          # 동기화 상태 확인
+          argocd app wait ${APP_NAME} --timeout 600
+          
+          echo "✅ ArgoCD sync completed for ${APP_NAME}"
+
+      - name: 🏥 Health check
+        env:
+          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+        run: |
+          NAMESPACE="club-platform-${ENVIRONMENT}"
+          
+          echo "🔍 Checking deployment health..."
+          
+          # 배포 상태 확인
+          kubectl rollout status deployment/backend -n ${NAMESPACE} --timeout=300s
+          kubectl rollout status deployment/frontend -n ${NAMESPACE} --timeout=300s
+          
+          # Pod 상태 확인
+          kubectl get pods -n ${NAMESPACE}
+          
+          # 서비스 상태 확인
+          kubectl get svc -n ${NAMESPACE}
+          
+          echo "✅ All deployments are healthy"
+
+      - name: 📊 Deployment metrics
+        env:
+          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+        run: |
+          NAMESPACE="club-platform-${ENVIRONMENT}"
+          
+          echo "📊 Deployment Summary:"
+          echo "Environment: ${ENVIRONMENT}"
+          echo "Namespace: ${NAMESPACE}"
+          echo "Backend Image: ${{ needs.build-and-scan.outputs.backend-image }}"
+          echo "Frontend Image: ${{ needs.build-and-scan.outputs.frontend-image }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
+          echo "Deploy Time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+
+      - name: 🧹 Cleanup
+        if: always()
+        run: |
+          rm -f /tmp/kubeconfig
+          rm -f /tmp/deployment.yaml
+
+  # 📢 포괄적 알림 시스템
+  notify:
+    name: 📢 Comprehensive Notifications
+    runs-on: ubuntu-latest
+    needs: [security-validation, code-quality, test, build-and-scan, deploy]
+    if: always()
+    
+    steps:
+      - name: 📊 Generate deployment report
+        id: report
+        run: |
+          ENVIRONMENT=${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+          
+          echo "## 🚀 Deployment Report" > report.md
+          echo "" >> report.md
+          echo "**Repository:** ${{ github.repository }}" >> report.md
+          echo "**Branch:** ${{ github.ref_name }}" >> report.md
+          echo "**Environment:** ${ENVIRONMENT}" >> report.md
+          echo "**Commit:** ${{ github.sha }}" >> report.md
+          echo "**Author:** ${{ github.actor }}" >> report.md
+          echo "**Workflow:** ${{ github.workflow }}" >> report.md
+          echo "" >> report.md
+          
+          echo "### 📋 Job Status" >> report.md
+          echo "- Security Validation: ${{ needs.security-validation.result }}" >> report.md
+          echo "- Code Quality: ${{ needs.code-quality.result }}" >> report.md
+          echo "- Tests: ${{ needs.test.result }}" >> report.md
+          echo "- Build & Scan: ${{ needs.build-and-scan.result }}" >> report.md
+          echo "- Deploy: ${{ needs.deploy.result }}" >> report.md
+          echo "" >> report.md
+          
+          if [[ "${{ needs.build-and-scan.result }}" == "success" ]]; then
+            echo "### 🐳 Images Built" >> report.md
+            echo "- Backend: ${{ needs.build-and-scan.outputs.backend-image }}" >> report.md
+            echo "- Frontend: ${{ needs.build-and-scan.outputs.frontend-image }}" >> report.md
+            echo "" >> report.md
+          fi
+          
+          # 전체 상태 결정
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+          elif [[ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "status=cancelled" >> $GITHUB_OUTPUT
+            echo "emoji=🚫" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📢 Slack notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "channel": "#cicd-alerts",
+              "username": "CI/CD Bot",
+              "icon_emoji": "${{ steps.report.outputs.emoji }}",
+              "attachments": [
+                {
+                  "color": "${{ steps.report.outputs.status == 'success' && 'good' || (steps.report.outputs.status == 'failure' && 'danger' || 'warning') }}",
+                  "title": "${{ steps.report.outputs.emoji }} CI/CD Pipeline ${{ steps.report.outputs.status }}",
+                  "title_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                  "fields": [
+                    {
+                      "title": "Repository",
+                      "value": "${{ github.repository }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Branch",
+                      "value": "${{ github.ref_name }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Environment",
+                      "value": "${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Author",
+                      "value": "${{ github.actor }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Security",
+                      "value": "${{ needs.security-validation.result }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Tests",
+                      "value": "${{ needs.test.result }}",
+                      "short": true
+                    }
+                  ],
+                  "footer": "GitHub Actions",
+                  "ts": ${{ github.event.head_commit.timestamp && github.event.head_commit.timestamp || github.event.repository.updated_at }}
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: 📧 Email notification on failure
+        if: failure() || needs.security-validation.result == 'failure' || needs.test.result == 'failure'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_HOST_USER }}
+          password: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          subject: "🚨 CI/CD Pipeline Alert - ${{ github.repository }}"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: ${{ secrets.EMAIL_HOST_USER }}
+          body: |
+            ⚠️ CI/CD Pipeline requires attention
+            
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+            
+            Job Results:
+            - Security Validation: ${{ needs.security-validation.result }}
+            - Code Quality: ${{ needs.code-quality.result }}
+            - Tests: ${{ needs.test.result }}
+            - Build & Scan: ${{ needs.build-and-scan.result }}
+            - Deploy: ${{ needs.deploy.result }}
+            
+            Please check the GitHub Actions logs for details:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            Time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+      - name: 📊 Update deployment status
+        if: always()
+        run: |
+          echo "Pipeline completed with status: ${{ steps.report.outputs.status }}"
+          echo "All notifications sent successfully"

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: club-platform-staging
+  labels:
+    app: club-platform
+    component: backend
+    environment: staging
+data:
+  # 비민감 환경변수들 (시크릿이 아닌 설정들)
+  DEBUG: "True"
+  DB_NAME: "gwnu_club_db_staging"
+  DB_USER: "gwnu_user"
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
+  EMAIL_HOST: "smtp.gmail.com"
+  EMAIL_PORT: "587"
+  EMAIL_USE_TLS: "True"
+  ALLOWED_HOSTS: "staging.club-platform.local,localhost,127.0.0.1"
+  CORS_ALLOWED_ORIGINS: "http://staging.club-platform.local,http://localhost:3000"
+  
+  # 애플리케이션 설정
+  LOG_LEVEL: "DEBUG"
+  MAX_UPLOAD_SIZE: "10485760"  # 10MB
+  SESSION_TIMEOUT: "1800"     # 30분

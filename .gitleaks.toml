@@ -1,0 +1,38 @@
+title = "gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+description = "Django Secret Key"
+id = "django-secret-key"
+regex = '''SECRET_KEY\s*=\s*['"][a-zA-Z0-9@#$%^&*()_+\-=\[\]{}|;:,.<>?]{50,}['"]'''
+tags = ["secret", "django"]
+
+[[rules]]
+description = "Email Passwords"
+id = "email-password"
+regex = '''EMAIL_HOST_PASSWORD\s*=\s*['"][a-zA-Z0-9]{16}['"]'''
+tags = ["secret", "email"]
+
+[[rules]]
+description = "Database Passwords"
+id = "db-password"
+regex = '''DB_PASSWORD\s*=\s*['"][a-zA-Z0-9_]{8,}['"]'''
+tags = ["secret", "database"]
+
+[[rules]]
+description = "Slack Webhook"
+id = "slack-webhook"
+regex = '''https://hooks\.slack\.com/[A-Za-z0-9+/=]+'''
+tags = ["secret", "slack"]
+
+[allowlist]
+description = "Allowlist"
+files = ['''^\.env\.example$''', '''^docs/''']
+regexes = [
+  '''dev-secret-key''',
+  '''fake-password-for-dev''',
+  '''test@example.com''',
+  '''REPLACE_WITH_GITHUB_SECRET'''
+]

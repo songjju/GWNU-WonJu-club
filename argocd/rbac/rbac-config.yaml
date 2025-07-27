@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  policy.default: role:readonly
+  policy.csv: |
+    # 개발자 권한
+    p, role:developer, applications, get, */*, allow
+    p, role:developer, applications, sync, */staging-*, allow
+    p, role:developer, applications, action/*, */staging-*, allow
+    p, role:developer, logs, get, */*, allow
+    p, role:developer, exec, create, */staging-*, allow
+    
+    # 관리자 권한
+    p, role:admin, applications, *, */*, allow
+    p, role:admin, clusters, *, *, allow
+    p, role:admin, repositories, *, *, allow
+    
+    # 사용자 그룹 매핑 (GitHub Teams 기준)
+    g, club-platform:developers, role:developer
+    g, club-platform:admins, role:admin

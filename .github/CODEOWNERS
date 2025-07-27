@@ -1,0 +1,23 @@
+# 코드 소유자 정의
+* @club-platform/admins
+
+# CI/CD 관련 파일들
+/.github/ @club-platform/devops
+/manifests/ @club-platform/devops
+/argocd/ @club-platform/devops
+/scripts/ @club-platform/devops
+
+# 보안 관련 파일들
+/secrets/ @club-platform/security
+**/*secret* @club-platform/security
+**/*.env* @club-platform/security
+
+# 백엔드 코드
+/backend/ @club-platform/backend-team
+
+# 프론트엔드 코드  
+/frontend/ @club-platform/frontend-team
+
+# 문서
+/docs/ @club-platform/admins
+README.md @club-platform/admins

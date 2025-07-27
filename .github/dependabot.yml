@@ -1,0 +1,74 @@
+version: 2
+updates:
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    commit-message:
+      prefix: "🔧"
+      include: "scope"
+    reviewers:
+      - "club-platform/admins"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday" 
+      time: "09:00"
+    commit-message:
+      prefix: "📦"
+      include: "scope"
+    reviewers:
+      - "club-platform/admins"
+    labels:
+      - "dependencies"
+      - "backend"
+    ignore:
+      - dependency-name: "django"
+        update-types: ["version-update:semver-major"]
+
+  # NPM dependencies
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    commit-message:
+      prefix: "📦"
+      include: "scope"
+    reviewers:
+      - "club-platform/admins"
+    labels:
+      - "dependencies"
+      - "frontend"
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    commit-message:
+      prefix: "🐳"
+
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    commit-message:
+      prefix: "🐳"

@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: club-platform-environments
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - environment: staging
+        branch: develop
+        replicas: 1
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      - environment: production
+        branch: main
+        replicas: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+  template:
+    metadata:
+      name: club-platform-{{environment}}
+      namespace: argocd
+      labels:
+        app: club-platform
+        environment: "{{environment}}"
+    spec:
+      project: club-platform
+      source:
+        repoURL: https://github.com/사용자명/동아리플랫폼
+        targetRevision: "{{branch}}"
+        path: "manifests/overlays/{{environment}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "club-platform-{{environment}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - PrunePropagationPolicy=foreground
+      
+    

@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: club-platform-production
+  namespace: argocd
+  labels:
+    app: club-platform
+    environment: production
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: cicd-alerts
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: cicd-alerts
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: club-platform
+
+  source:
+    repoURL: https://github.com/songjju/GWNU-WonJu-club
+    targetRevision: main
+    path: manifests/overlays/production
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: club-platform-production
+
+  syncPolicy:
+    # 프로덕션은 수동 승인 필요
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    - PruneLast=true
+
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+  
+  revisionHistoryLimit: 20
+  
+  # 건강 상태 확인
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/replicas
+    
