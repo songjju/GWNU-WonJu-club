@@ -52,7 +52,7 @@ jobs:
           safety check
 
       - name: 🔒 Docker image security scan
-        uses: aquasec/trivy-action@0.20.0
+        uses: aquasec/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: './backend'
