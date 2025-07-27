@@ -51,19 +51,25 @@ jobs:
           pip install -r requirements.txt
           safety check
 
-      - name: 🔒 Docker image security scan
-        uses: aquasec/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: './backend'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
+      - name: 🔒 Install and run Trivy scanner
+        run: |
+          # Trivy 설치
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+    
+          # Backend 파일시스템 스캔
+          echo "🔍 Scanning backend directory..."
+          trivy fs ./backend --format table --exit-code 0
+    
+          # Frontend 파일시스템 스캔 (선택사항)
+          echo "🔍 Scanning frontend directory..."
+          trivy fs ./frontend --format table --exit-code 0
+    
+          echo "✅ Security scan completed"
 
   # 🎨 코드 품질 검사
   code-quality:
