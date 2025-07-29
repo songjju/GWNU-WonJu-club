@@ -30,13 +30,20 @@ class MyClubListSerializer(serializers.ModelSerializer):
         return obj.logo.url if obj.logo else None
 
     def get_id(self, obj):  # club_member 의 id를 가져오기 위한 함수
-        return obj.clubmember_set.get(student_id=self.context['request'].user).id
-
+        try:
+            # 중복 멤버십 방지를 위해 가장 최근 멤버십만 가져오기
+            return obj.clubmember_set.filter(student_id=self.context['request'].user).first().id
+        except AttributeError:
+            return None
     def get_job(self, obj):
-        return obj.clubmember_set.get(student_id=self.context['request'].user).job
+        try:
+            member = obj.clubmember_set.filter(student_id=self.context['request'].user).first()
+            return member.job if member else None
+        except AttributeError:
+            return None
 
     class Meta:
-        model = ClubMember
+        model = Club
         fields = ['member_id', 'club_name', 'job', 'logo']
 
 

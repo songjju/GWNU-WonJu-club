@@ -11,12 +11,24 @@ from django.db.models import Count
 
 # Create your views here.
 class ClubListAPIView(APIView):
-    permission_classes = [AllowAny]
-
+    """
+    동아리 목록 조회 및 생성
+    - GET: 누구나 조회 가능 (공개 정보)
+    - POST: 인증된 사용자만 동아리 생성 가능
+    """
+    def get_permissions(self):
+        """
+        GET 요청은 AllowAny, POST 요청은 IsAuthenticated
+        """
+        if self.request.method == 'GET':
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated]
+        
+        return [permission() for permission in permission_classes]
 
     def get(self, request):
-        clubs = Club.objects.exclude(club_name="FreeBoard")  # 동아리 이름이 "FreeBoard"인 동아리는 제외
-
+        clubs = Club.objects.exclude(club_name="FreeBoard")
         clubs_data = ClubSerializer(clubs, many=True).data
         return Response(clubs_data)
 
@@ -29,34 +41,42 @@ class ClubListAPIView(APIView):
 
 
 class CategoryClubAPIView(APIView):
+    """동아리 카테고리별 조회 - 공개 정보"""
     permission_classes = [AllowAny]
 
     def get(self, request, category_id, type_id):
+        # 빈 문자열 처리
+        if category_id == '':
+            category_id = None
+        if type_id == '':
+            type_id = None
 
-        if category_id and not type_id:
-            category_clubs = Club.objects.filter(category=category_id).exclude(club_name="FreeBoard")
-        elif not category_id and type_id:
-            category_clubs = Club.objects.filter(type=type_id).exclude(club_name="FreeBoard")
-        else:
-            category_clubs = Club.objects.filter(category=category_id, type=type_id).exclude(club_name="FreeBoard")
+        queryset = Club.objects.exclude(club_name="FreeBoard")
+        
+        if category_id:
+            queryset = queryset.filter(category=category_id)
+        if type_id:
+            queryset = queryset.filter(type=type_id)
 
-        # 카테고리에 해당하는 동아리가 없을 때
-        if not category_clubs.exists():
+        if not queryset.exists():
             return Response({'error': '카테고리에 해당하는 동아리가 존재하지 않습니다.'}, status=status.HTTP_404_NOT_FOUND)
 
-        clubs_data = ClubSerializer(category_clubs, many=True).data
+        clubs_data = ClubSerializer(queryset, many=True).data
         return Response(clubs_data)
 
 
 class ApplyClubAPIView(APIView):
+    """동아리 가입 신청 - 인증 필요"""
     permission_classes = [IsAuthenticated]
+    
     def post(self, request):
         club_name = request.data.get('club_name')
-
         user = request.user
-        student_id = user.student_id
 
-        # 새로운 동아리 가입신청
+        # AnonymousUser 체크 추가
+        if not user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
         try:
             club = Club.objects.get(club_name=club_name)
         except Club.DoesNotExist:
@@ -69,26 +89,26 @@ class ApplyClubAPIView(APIView):
             return Response({'message': '동아리 회원입니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
         ClubMember.objects.create(club_name=club, student_id=user, joined_date=None)
-
         return Response({'message': '가입신청이 완료되었습니다.'}, status=status.HTTP_200_OK)
 
 class CreateClub(generics.CreateAPIView):
+    """동아리 생성 - 인증 필요"""
     permission_classes = [IsAuthenticated]
     queryset = Club.objects.all()
     serializer_class = ClubCreateSerializer
 
     def create(self, request, *args, **kwargs):
-        print("확인: ", request.data)
         user = self.request.user
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
+        if not user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+
         # 동아리 만든사람을 동아리 회장으로 만듬
         club_name = Club.objects.get(club_name=serializer.data['club_name'])
         club_member = ClubMember(club_name=club_name, student_id=user, joined_date=timezone.now(), job='회장')
-        print('회장: ', club_member)
         club_member.save()
 
         headers = self.get_success_headers(serializer.data)
@@ -96,17 +116,22 @@ class CreateClub(generics.CreateAPIView):
 
 
 class MyClubListView(generics.ListAPIView):
+    """내 동아리 목록 - 인증 필요"""
     permission_classes = [IsAuthenticated]
     serializer_class = MyClubListSerializer
     queryset = Club.objects.all()
 
     def get_queryset(self):
         user = self.request.user
-        # 학번과 가입 날짜가 있는 동아리
 
+        # AnonymousUser 체크 추가
+        if not user.is_authenticated:
+            return Club.objects.none()  # 빈 쿼리셋 반환
+        
         return Club.objects.filter(clubmember__student_id=user, clubmember__joined_date__isnull=False)
 
 class DropClubView(generics.DestroyAPIView):
+    """동아리 탈퇴 - 인증 필요"""
     permission_classes = [IsAuthenticated]
     queryset = ClubMember.objects.all()
 
@@ -114,30 +139,33 @@ class DropClubView(generics.DestroyAPIView):
         job = request.data.get('job')
         member_id = kwargs.get('member_id')
 
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
         try:
             instance = ClubMember.objects.get(pk=member_id)
         except ClubMember.DoesNotExist:
             return Response({"error": "Club member not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # 동아리 회장이 아닌경우와 동아리 회장인데 동아리 회원 수가 1명인 경우 삭제
-        if job == '회장' or ClubMember.objects.filter(club_name=instance.club_name).count() == 1:
+        if job == '회장':
             return Response({"error": "동아리 회장은 탈퇴못함"}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class CountClubCategoryView(generics.ListAPIView):
+    """동아리 카테고리별 통계 - 공개 정보"""
     permission_classes = [AllowAny]
     serializer_class = CountClubCategorySerializer
 
     def get_queryset(self):
-        # 동아리 카테고리별 동아리 수
-        return Club.objects.values('category').annotate(count=Count('category'))
+        return Club.objects.exclude(club_name="FreeBoard").values('category').annotate(count=Count('category'))
 
 class CountClubTypeView(generics.ListAPIView):
+    """동아리 타입별 통계 - 공개 정보"""
     permission_classes = [AllowAny]
     serializer_class = CountClubTypeSerializer
 
     def get_queryset(self):
-        # 동아리 타입별 동아리 수
-        return Club.objects.values('type').annotate(count=Count('type'))
+        return Club.objects.exclude(club_name="FreeBoard").values('type').annotate(count=Count('type'))

@@ -6,7 +6,6 @@ from rest_framework.permissions import *
 from rest_framework.authtoken.models import Token
 from club_management.permissions import IsPresidentOrAdmin
 from club_management.serializer import *
-from club_management.models import *
 from club_introduce.models import *
 from club_account.models import *
 import os
@@ -18,6 +17,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.core.signing import Signer
 from django.conf import settings
+from rest_framework.exceptions import NotFound
 
 
 class ClubManageListView(APIView):
@@ -91,32 +91,22 @@ class MemberApproveAPIView(APIView):
     http_method_names = ['delete', 'patch']
 
     def get_object(self, club_name, id):
-
-        # 객체를 안전하게 가져오기
+        """객체를 안전하게 가져오기 - Response 대신 예외 발생"""
         try:
-            # 객체를 안전하게 가져오기
             return ClubMember.objects.get(id=id, club_name=club_name)
         except ClubMember.DoesNotExist:
-            # 객체가 없는 경우 적절한 HTTP 상태 코드와 메시지를 반환
-            return Response({'error': 'No ClubMember found matching the given query.'},
-                            status=status.HTTP_404_NOT_FOUND)
+            raise NotFound(detail='No ClubMember found matching the given query.')
         except ClubMember.MultipleObjectsReturned:
-            # 객체가 여러 개 있는 경우 적절한 HTTP 상태 코드와 메시지를 반환
-            return Response({'error': 'Multiple ClubMembers found. Please specify unique identifier.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            raise NotFound(detail='Multiple ClubMembers found. Please specify unique identifier.')
 
     def delete(self, request, club_name, id):
-        """
-        신규 회원 거부
-        """
+        """신규 회원 거부"""
         member = self.get_object(club_name, id)
         member.delete()
         return Response({"message": "신청을 거부했습니다."}, status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, club_name, id):
-        """
-        신규 회원 승인
-        """
+        """신규 회원 승인"""
         member = self.get_object(club_name, id)
         member.joined_date = timezone.now()
         member.save()
@@ -131,25 +121,18 @@ class MemberManagement(APIView):
     permission_classes = [IsPresidentOrAdmin]
 
     def get_object(self, club_name, id):
-
-        # 객체를 안전하게 가져오기
+        """객체를 안전하게 가져오기 - Response 대신 예외 발생"""
         try:
-            # 객체를 안전하게 가져오기
             return ClubMember.objects.get(id=id, club_name=club_name)
         except ClubMember.DoesNotExist:
-            # 객체가 없는 경우 적절한 HTTP 상태 코드와 메시지를 반환
-            return Response({'error': 'No ClubMember found matching the given query.'},
-                            status=status.HTTP_404_NOT_FOUND)
+            raise NotFound(detail='해당 동아리 멤버를 찾을 수 없습니다.')
         except ClubMember.MultipleObjectsReturned:
-            # 객체가 여러 개 있는 경우 적절한 HTTP 상태 코드와 메시지를 반환
-            return Response({'error': 'Multiple ClubMembers found. Please specify unique identifier.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            raise NotFound(detail='Multiple ClubMembers found. Please specify unique identifier.')
+
     def patch(self, request, club_name, id):
-        try:
-            member = ClubMember.objects.get(club_name=club_name, id=id)
-        except ClubMember.DoesNotExist:
-            return Response({'error': '해당 동아리 멤버를 찾을 수 없습니다.'}, status=status.HTTP_404_NOT_FOUND)
-        member.job = request.data.get('role')
+        """멤버 직책 수정"""
+        member = self.get_object(club_name, id)
+        member.job = request.data.get('role', member.job)
         member.save()
 
         serializer = ClubMemberSerializer(member, data=request.data, partial=True)
@@ -158,10 +141,12 @@ class MemberManagement(APIView):
         return Response({'message': '직책 수정이 완료되었습니다.'}, status=status.HTTP_200_OK)
 
     def delete(self, request, club_name, id):
+        """멤버 퇴출"""
         presidents_count = ClubMember.objects.filter(club_name=club_name, job='회장').count()
-
+        
         member = self.get_object(club_name, id)
-        # 만약 회장 수가 2개 미만이면 Bad Request 반환
+        
+        # 회장이 2명 미만이면 삭제 불가
         if member.job == "회장" and presidents_count < 2:
             return Response({'error': '회장이 2명 미만입니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -346,39 +331,35 @@ class ImageCorrectionDelete(APIView):
 
         return Response({'message': 'Image uploaded successfully', 'file_name': image_name}, status=status.HTTP_200_OK)
 
-class IntroducationCorrection(APIView):
-    serializer_class = ClubSerializer
-    lookup_field = 'club_name'
+class IntroductionCorrection(APIView):
+    """동아리 소개글 수정"""
     permission_classes = [IsPresidentOrAdmin]
-
+    
     def patch(self, request, club_name):
-        """
-        동아리 소개글 수정
-        """
-        club = Club.objects.get(club_name=club_name)
         introduction = request.data.get('introduction')
-
+        
         if introduction:
-            # 동아리 소개글 업데이트 로직 구현
-            # 예를 들어, 동아리 모델에서 introduction 필드를 업데이트하고 저장하는 등의 작업을 수행할 수 있습니다.
-            club.introducation = introduction
-            club.save()
-            return Response({
-                'message': '소개글을 성공적으로 수정했습니다.',
-                'introduction': introduction
-            }, status=status.HTTP_200_OK)
+            try:
+                club = Club.objects.get(club_name=club_name)
+                club.introducation = introduction
+                club.save()
+                return Response({
+                    'message': '소개글을 성공적으로 수정했습니다.',
+                    'introduction': introduction
+                }, status=status.HTTP_200_OK)
+            except Club.DoesNotExist:
+                return Response({'error': '동아리를 찾을 수 없습니다.'}, status=status.HTTP_404_NOT_FOUND)
         else:
-            # 요청에 소개글이 포함되지 않은 경우에는 오류 응답을 반환합니다.
             return Response({'error': '소개글이 포함되지 않았습니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class DeleteClub(APIView):
+    """동아리 삭제"""
     permission_classes = [IsPresidentOrAdmin]
 
     def delete(self, request, club_name):
         try:
             club = Club.objects.get(club_name=club_name)
+            club.delete()
+            return Response({"message": f"동아리 '{club_name}' 삭제 완료."}, status=status.HTTP_204_NO_CONTENT)
         except Club.DoesNotExist:
-            return Response({"message": "해당 동아리가 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-        club.delete()
-        return Response({"message": f"동아리 '{club_name}' 삭제 완료."}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"error": "해당 동아리가 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)

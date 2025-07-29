@@ -135,43 +135,6 @@ DATABASES = {
     }
 }
 
-# 테스트 환경 설정
-if 'test' in sys.argv:
-    # 테스트용 데이터베이스 (메모리 사용)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
-        }
-    }
-    
-    # 테스트용 이메일 백엔드
-    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
-    
-    # 빠른 비밀번호 해싱
-    PASSWORD_HASHERS = [
-        'django.contrib.auth.hashers.MD5PasswordHasher',
-    ]
-    
-    # dj-rest-auth 테스트 설정
-    ACCOUNT_EMAIL_VERIFICATION = 'none'
-    ACCOUNT_EMAIL_REQUIRED = False
-    ACCOUNT_AUTHENTICATION_METHOD = 'email'
-    ACCOUNT_USERNAME_REQUIRED = False
-    
-    # REST Framework 테스트 설정
-    REST_FRAMEWORK = {
-        'DEFAULT_AUTHENTICATION_CLASSES': [
-            'rest_framework.authentication.TokenAuthentication',
-            'rest_framework.authentication.SessionAuthentication',
-        ],
-        'DEFAULT_PERMISSION_CLASSES': [
-            'rest_framework.permissions.IsAuthenticated',
-        ],
-        'TEST_REQUEST_DEFAULT_FORMAT': 'json',
-    }
-
-
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -309,3 +272,37 @@ ASGI_APPLICATION = 'backend.asgi.application'
 # 🔧 추가: WebSocket 설정
 WEBSOCKET_ACCEPT_ALL = True
 WEBSOCKET_TIMEOUT = 30  # 30초 타임아웃
+
+# 테스트 환경 설정
+if 'test' in sys.argv:
+    # 테스트용 데이터베이스 (메모리 사용)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+    
+    # 테스트용 이메일 백엔드
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    
+    # 빠른 비밀번호 해싱
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]
+
+    
+    # 테스트용 REST Framework 설정 (강제 적용)
+    REST_FRAMEWORK = {
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework.authentication.TokenAuthentication',
+            'rest_framework.authentication.SessionAuthentication',
+        ],
+        'DEFAULT_PERMISSION_CLASSES': [
+            'rest_framework.permissions.AllowAny',  # 모든 API 허용
+        ],
+        'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+        'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+        'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+        'PAGE_SIZE': 10,
+    }

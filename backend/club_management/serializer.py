@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from club_management.models import *
 from club_account.models import *
 from club_introduce.models import *
 
