@@ -63,60 +63,33 @@ const EventList = () => {
   const isLoggedIn = !!token;
   const isClubOfficer = localStorage.getItem('isClubOfficer') === 'true';
 
-  const fetchEvents = (page, search, sort, tag) => {
-    setIsLoading(true);
-    fetch(`${API_BASE_URL}/events/?page=${page}&search=${search}&ordering=${sort}&tag=${tag}`, { //올바른 URL 입력
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Token ${token}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setEvents(data.results);
-        setTotalPages(Math.ceil(data.count / 6));
-        setIsLoading(false);
-        adjustPadding();
-      })
-      .catch((error) => {
-        console.error(error);
-        setEvents([]);
-        setIsLoading(false);
-        adjustPadding();
-      });
-  };
-
-  const fetchTags = () => {
-    fetch(`${API_BASE_URL}/event_tags/`, { //올바른 URL 입력
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Token ${token}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setTags(data);
-      })
-      .catch((error) => console.error(error));
-  };
-
-  const adjustPadding = () => {
-    const container = document.querySelector('.event-notice-container');
-    if (container) {
-      container.style.paddingTop = '80px';
-    }
-  };
-
   useEffect(() => {
-    fetchEvents(currentPage, searchTerm, sortOrder, selectedTag);
-    fetchTags();
+    fetchEvents();
   }, [currentPage, searchTerm, sortOrder, selectedTag]);
 
-  useEffect(() => {
-    adjustPadding();
-  }, []);
+  const fetchEvents = () => {
+    setIsLoading(true);
+    fetch(`${API_BASE_URL}/club_board/event/?page=${currentPage}&search=${searchTerm}&ordering=${sortOrder}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Token ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setEvents(data.results || []);
+        setTotalPages(Math.ceil(data.count / 10));
+        setIsLoading(false);
+        setTags(data.tags || []);
+      })
+      .catch((error) => {
+        console.error('Error: Network error');
+        setEvents([]);
+        setIsLoading(false);
+        setTags([]);
+      });
+  };
 
   const toggleDropdown = () => setDropdownOpen((prevState) => !prevState);
   const toggleLoginModal = () => setIsLoginModalOpen((prevState) => !prevState);
@@ -128,13 +101,13 @@ const EventList = () => {
     } else if (!isClubOfficer) {
       toggleWarningModal();
     } else {
-      navigate('/create_event');
+      navigate('/create-event');
     }
   };
 
   const handleSortOrderChange = (order) => {
     setSortOrder(order);
-    fetchEvents(currentPage, searchTerm, order, selectedTag);
+    fetchEvents();
   };
 
   const handleSearchInputChange = (e) => {
@@ -164,18 +137,19 @@ const EventList = () => {
             onChange={handleSearchInputChange}
             onKeyPress={handleKeyPress}
             className="search-input"
+            data-testid="input"
           />
-          <Button color="secondary" className="search-button" onClick={handleSearch}>
-            <FontAwesomeIcon icon={faSearch} />
+          <Button color="secondary" className="search-button" onClick={handleSearch} data-testid="search-button">
+            <FontAwesomeIcon icon={faSearch} data-testid="fontawesome-icon" />
           </Button>
-          <Dropdown isOpen={dropdownOpen} toggle={toggleDropdown} className="sort-dropdown">
-            <DropdownToggle caret className="dropdown">
+          <Dropdown isOpen={dropdownOpen} toggle={toggleDropdown} className="sort-dropdown" data-testid="dropdown">
+            <DropdownToggle caret className="dropdown" data-testid="dropdown-toggle">
               정렬
             </DropdownToggle>
-            <DropdownMenu>
-              <DropdownItem onClick={() => setSelectedTag('')}>전체</DropdownItem>
-              <DropdownItem onClick={() => handleSortOrderChange('desc')}>최신순</DropdownItem>
-              <DropdownItem onClick={() => handleSortOrderChange('asc')}>오래된 순</DropdownItem>
+            <DropdownMenu data-testid="dropdown-menu">
+              <DropdownItem onClick={() => setSelectedTag('')} data-testid="dropdown-item">전체</DropdownItem>
+              <DropdownItem onClick={() => handleSortOrderChange('desc')} data-testid="dropdown-item">최신순</DropdownItem>
+              <DropdownItem onClick={() => handleSortOrderChange('asc')} data-testid="dropdown-item">오래된 순</DropdownItem>
             </DropdownMenu>
           </Dropdown>
         </div>
@@ -185,7 +159,7 @@ const EventList = () => {
         <div className="d-flex justify-content-center">Loading...</div>
       ) : (
         <div className="table-container">
-          <Table className="event-table">
+          <Table className="event-table" data-testid="table">
             <thead>
               <tr>
                 <th>No</th>
@@ -203,7 +177,7 @@ const EventList = () => {
                 </tr>
               ) : (
                 events.length === 0 ? (
-                  Array.from({ length:6 }).map((_, index) => (
+                  Array.from({ length: 6 }).map((_, index) => (
                     <tr key={index}>
                       <td>{index + 1}</td>
                       <td colSpan="5" className="text-center">이벤트가 없습니다.</td>
@@ -227,7 +201,7 @@ const EventList = () => {
               )}
             </tbody>
           </Table>
-          <Button color="primary" onClick={handleWriteButtonClick} className="btn write-btn">작성</Button>
+          <Button color="primary" onClick={handleWriteButtonClick} className="btn write-btn" data-testid="write-button">작성</Button>
         </div>
       )}
 
@@ -235,7 +209,7 @@ const EventList = () => {
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
 
-      <Modal isOpen={isLoginModalOpen} toggle={toggleLoginModal}>
+      <Modal isOpen={isLoginModalOpen} toggle={toggleLoginModal} data-testid="modal">
         <ModalHeader toggle={toggleLoginModal}>로그인 필요</ModalHeader>
         <ModalBody>임원만 작성할 수 있습니다. 로그인하시겠습니까?</ModalBody>
         <ModalFooter>
@@ -244,7 +218,7 @@ const EventList = () => {
         </ModalFooter>
       </Modal>
 
-      <Modal isOpen={isWarningModalOpen} toggle={toggleWarningModal}>
+      <Modal isOpen={isWarningModalOpen} toggle={toggleWarningModal} data-testid="modal">
         <ModalHeader toggle={toggleWarningModal}>권한 없음</ModalHeader>
         <ModalBody>임원만 작성할 수 있습니다.</ModalBody>
         <ModalFooter>

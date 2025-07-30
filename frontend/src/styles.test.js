@@ -76,8 +76,8 @@ describe('Styled Components', () => {
     expect(typeof LogoImage).toBe('object');
     
     // Styled components는 $typeof 속성을 가짐
-    expect(BannerImage.$typeof).toBeDefined();
-    expect(ProfileImage.$typeof).toBeDefined();
-    expect(LogoImage.$typeof).toBeDefined();
+    expect(BannerImage.$$typeof).toBeDefined();
+    expect(ProfileImage.$$typeof).toBeDefined();
+    expect(LogoImage.$$typeof).toBeDefined();
   });
 });

@@ -1,12 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import '../Main_Style/ClubNotice.css';
-import { Table, Button, Input, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
-import { useNavigate } from 'react-router-dom';
+// src/Main/Main_Component/ClubNotice.js
+import React, { useState, useEffect } from 'react';
+import {
+  Input,
+  Button,
+  Table,
+  Dropdown,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
-import API_BASE_URL from '../../config/apiConfig'; // API 설정 임포트
+import { useNavigate } from 'react-router-dom';
+// Pagination 컴포넌트를 inline으로 정의
+import { API_BASE_URL } from '../../config/apiConfig';
+import './ClubNotice.css';
 
+// Pagination 컴포넌트를 inline으로 정의
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const handlePageChange = (page) => {
     if (page > 0 && page <= totalPages) {
@@ -46,20 +60,21 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 const ClubNotice = () => {
   const [notices, setNotices] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);    
-  const [isLoading, setIsLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [searchPerformed, setSearchPerformed] = useState(false);
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedTag, setSelectedTag] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
-  const [searchPerformed, setSearchPerformed] = useState(false);
+
   const navigate = useNavigate();
 
-  const token = localStorage.getItem('token');
-  const isLoggedIn = !!token;
+  const token = localStorage.getItem('access_token');
+  const isLoggedIn = !!token; // 수정: !token에서 !!token으로 변경
   const isClubOfficer = localStorage.getItem('isClubOfficer') === 'true';
 
   useEffect(() => {
@@ -83,10 +98,12 @@ const ClubNotice = () => {
         } else {
           setNotices([]);
         }
+        setIsLoading(false);
       })
       .catch((error) => {
-        console.log(error);
+        console.log('Error: Network error');
         setNotices([]); // 오류 발생 시 notices를 빈 배열로 설정
+        setIsLoading(false);
       });
   };
 
@@ -94,6 +111,7 @@ const ClubNotice = () => {
   const toggleLoginModal = () => setIsLoginModalOpen((prevState) => !prevState);
   const toggleWarningModal = () => setIsWarningModalOpen((prevState) => !prevState);
 
+  // 수정된 handleWriteButtonClick 함수
   const handleWriteButtonClick = () => {
     if (!isLoggedIn) {
       toggleLoginModal();
@@ -137,25 +155,26 @@ const ClubNotice = () => {
             onChange={handleSearchInputChange}
             onKeyPress={handleKeyPress}
             className="search-input"
+            data-testid="input"
           />
-          <Button color="secondary" className="search-button" onClick={handleSearch}>
-            <FontAwesomeIcon icon={faSearch} />
+          <Button color="secondary" className="search-button" onClick={handleSearch} data-testid="search-button">
+            <FontAwesomeIcon icon={faSearch} data-testid="fontawesome-icon" />
           </Button>
-          <Dropdown isOpen={dropdownOpen} toggle={toggleDropdown} className="sort-dropdown">
-            <DropdownToggle caret className="dropdown">
+          <Dropdown isOpen={dropdownOpen} toggle={toggleDropdown} className="sort-dropdown" data-testid="dropdown">
+            <DropdownToggle caret className="dropdown" data-testid="dropdown-toggle">
               정렬
             </DropdownToggle>
-            <DropdownMenu>
-              <DropdownItem onClick={() => setSelectedTag('')}>전체</DropdownItem>
-              <DropdownItem divider />
-              <DropdownItem onClick={() => handleSortOrderChange('desc')}>최신순</DropdownItem>
-              <DropdownItem onClick={() => handleSortOrderChange('asc')}>오래된 순</DropdownItem>
+            <DropdownMenu data-testid="dropdown-menu">
+              <DropdownItem onClick={() => setSelectedTag('')} data-testid="dropdown-item">전체</DropdownItem>
+              <DropdownItem divider data-testid="dropdown-item" />
+              <DropdownItem onClick={() => handleSortOrderChange('desc')} data-testid="dropdown-item">최신순</DropdownItem>
+              <DropdownItem onClick={() => handleSortOrderChange('asc')} data-testid="dropdown-item">오래된 순</DropdownItem>
             </DropdownMenu>
           </Dropdown>
         </div>
       </div>
 
-      <Table className="table table-striped table-hover table-sm">
+      <Table className="table table-striped table-hover table-sm" data-testid="table">
         <thead className="thead-dark">
           <tr>
             <th className='table-secondary'>Link</th>
@@ -174,11 +193,18 @@ const ClubNotice = () => {
         </tbody>
       </Table>
       
+      {/* 추가된 글쓰기 버튼 */}
+      <div className="d-flex justify-content-end mb-3">
+        <Button color="primary" onClick={handleWriteButtonClick} className="btn write-btn" data-testid="write-button">
+          공지사항 작성
+        </Button>
+      </div>
+
       <div className="d-flex justify-content-center">
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
 
-      <Modal isOpen={isLoginModalOpen} toggle={toggleLoginModal}>
+      <Modal isOpen={isLoginModalOpen} toggle={toggleLoginModal} data-testid="modal">
         <ModalHeader toggle={toggleLoginModal}>로그인 필요</ModalHeader>
         <ModalBody>임원만 작성할 수 있습니다. 로그인하시겠습니까?</ModalBody>
         <ModalFooter>
@@ -187,7 +213,7 @@ const ClubNotice = () => {
         </ModalFooter>
       </Modal>
 
-      <Modal isOpen={isWarningModalOpen} toggle={toggleWarningModal}>
+      <Modal isOpen={isWarningModalOpen} toggle={toggleWarningModal} data-testid="modal">
         <ModalHeader toggle={toggleWarningModal}>권한 없음</ModalHeader>
         <ModalBody>임원만 작성할 수 있습니다.</ModalBody>
         <ModalFooter>

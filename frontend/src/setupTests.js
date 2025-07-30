@@ -11,102 +11,40 @@ jest.mock('axios', () => ({
   },
 }));
 
-// React Bootstrap 완전 모킹 - 개선된 버전
+// ReactBootstrap 모킹
 jest.mock('react-bootstrap', () => {
   const mockReact = require('react');
   
-  const MockComponent = ({ children, className, as, fluid, xs, md, lg, ...props }) => {
-    // DOM에서 허용되지 않는 props 필터링
-    const { controlId, expand, variant, interval, isOpen, toggle, ...domProps } = props;
-    const Component = as || 'div';
-    
-    // fluid prop은 Container에서만 사용되므로 문자열로 변환하지 않고 제거
-    if (Component === 'div' && fluid !== undefined) {
-      delete domProps.fluid;
-    }
-    
-    return mockReact.createElement(Component, { 
-      className, 
-      'data-testid': `${Component}`,
-      ...domProps 
-    }, children);
-  };
-
-  const MockForm = ({ children, className, onSubmit, ...props }) => {
-    // Form에서 controlId 제거
-    const { controlId, ...domProps } = props;
-    return mockReact.createElement('form', { 
-      className, 
-      onSubmit,
-      'data-testid': 'form',
-      ...domProps 
-    }, children);
-  };
-
-  const MockFormGroup = ({ children, className, controlId, ...props }) => {
-    // controlId는 DOM에 전달하지 않음
-    return mockReact.createElement('div', { 
-      className, 
-      'data-testid': 'form-group',
-      ...props 
-    }, children);
-  };
-
-  const MockFormControl = ({ as, type, value, onChange, placeholder, className, controlId, ...props }) => {
-    // controlId 제거하고 input 요소에 children이 없도록 보장
-    const { children, ...inputProps } = props;
-    const Component = as || 'input';
-    
-    if (Component === 'input') {
-      return mockReact.createElement('input', { 
-        type,
-        value,
-        onChange,
-        placeholder,
-        className,
-        'data-testid': 'form-control',
-        ...inputProps
-      });
-    }
-    
-    return mockReact.createElement(Component, { 
-      value,
-      onChange,
-      placeholder,
-      className,
-      'data-testid': 'form-control',
-      ...inputProps 
-    }, children);
+  const MockComponent = ({ children, className, ...props }) => {
+    const Component = props.as || 'div';
+    return mockReact.createElement(Component, { className, ...props }, children);
   };
 
   const MockNavbarBrand = ({ children, as, to, className, ...props }) => {
     if (as) {
-      return mockReact.createElement(as, { to, className, 'data-testid': 'navbar-brand', ...props }, children);
+      return mockReact.createElement(as, { to, className, ...props }, children);
     }
-    return mockReact.createElement('div', { className, 'data-testid': 'navbar-brand', ...props }, children);
+    return mockReact.createElement('div', { className, ...props }, children);
   };
 
   const MockNavLink = ({ children, as, to, onClick, className, ...props }) => {
     if (as === 'div') {
-      return mockReact.createElement('div', { onClick, className, 'data-testid': 'nav-link', ...props }, children);
+      return mockReact.createElement('div', { onClick, className, ...props }, children);
     }
     if (as) {
-      return mockReact.createElement(as, { to, className, 'data-testid': 'nav-link', ...props }, children);
+      return mockReact.createElement(as, { to, className, ...props }, children);
     }
-    return mockReact.createElement('a', { onClick, className, 'data-testid': 'nav-link', ...props }, children);
+    return mockReact.createElement('a', { onClick, className, ...props }, children);
   };
   
-  const Navbar = ({ children, className, expand, ...props }) => {
-    // expand prop 제거
-    const { fluid, ...domProps } = props;
-    return mockReact.createElement('nav', { 
+  const Navbar = ({ children, className, expand, ...props }) => (
+    mockReact.createElement('nav', { 
       'data-testid': 'navbar', 
       className, 
-      ...domProps 
-    }, children);
-  };
+      ...props 
+    }, children)
+  );
 
-  // Navbar의 하위 컴포넌트들을 Navbar 객체의 속성으로 설정
   Navbar.Brand = MockNavbarBrand;
   Navbar.Toggle = ({ children, ...props }) => (
     mockReact.createElement('button', { 
@@ -130,56 +68,41 @@ jest.mock('react-bootstrap', () => {
     }, children)
   );
 
-  // Nav의 하위 컴포넌트
   Nav.Link = MockNavLink;
 
-  const MockCarousel = ({ children, interval, ...props }) => (
-    mockReact.createElement('div', { 
-      'data-testid': 'carousel', 
-      'data-interval': interval, 
-      ...props 
-    }, children)
-  );
-
-  MockCarousel.Item = ({ children, ...props }) => (
-    mockReact.createElement('div', { 
-      'data-testid': 'carousel-item', 
-      ...props 
-    }, children)
-  );
-
-  const MockCard = ({ children, className, ...props }) => (
+  // Card 컴포넌트와 하위 컴포넌트들 모킹
+  const Card = ({ children, className, ...props }) => (
     mockReact.createElement('div', { 
       'data-testid': 'card', 
-      className,
+      className, 
       ...props 
     }, children)
   );
 
-  MockCard.Img = ({ variant, src, alt, ...props }) => (
+  Card.Img = ({ variant, src, alt, ...props }) => (
     mockReact.createElement('img', { 
-      'data-testid': 'card-img', 
+      'data-testid': 'card-img',
       src,
       alt,
       ...props 
     })
   );
 
-  MockCard.Body = ({ children, ...props }) => (
+  Card.Body = ({ children, ...props }) => (
     mockReact.createElement('div', { 
       'data-testid': 'card-body', 
       ...props 
     }, children)
   );
 
-  MockCard.Title = ({ children, ...props }) => (
+  Card.Title = ({ children, ...props }) => (
     mockReact.createElement('h5', { 
       'data-testid': 'card-title', 
       ...props 
     }, children)
   );
 
-  MockCard.Text = ({ children, ...props }) => (
+  Card.Text = ({ children, ...props }) => (
     mockReact.createElement('p', { 
       'data-testid': 'card-text', 
       ...props 
@@ -187,79 +110,89 @@ jest.mock('react-bootstrap', () => {
   );
 
   return {
-    Container: ({ children, fluid, ...props }) => {
-      // fluid prop을 DOM에 전달하지 않음
-      return mockReact.createElement('div', { 'data-testid': 'container', ...props }, children);
-    },
+    Container: ({ children, fluid, ...props }) => 
+      mockReact.createElement('div', { 'data-testid': 'container', ...props }, children),
     Row: ({ children, className, ...props }) => 
       mockReact.createElement('div', { 'data-testid': 'row', className, ...props }, children),
-    Col: ({ children, xs, md, lg, ...props }) => {
-      // Bootstrap specific props 제거
-      return mockReact.createElement('div', { 'data-testid': 'col', ...props }, children);
-    },
-    Form: MockForm,
-    'Form.Group': MockFormGroup,
-    'Form.Control': MockFormControl,
-    'Form.Label': ({ children, ...props }) => 
-      mockReact.createElement('label', { 'data-testid': 'form-label', ...props }, children),
+    Col: ({ children, xs, md, ...props }) => 
+      mockReact.createElement('div', { 'data-testid': 'col', ...props }, children),
     Navbar,
     Nav,
-    Button: ({ children, variant, onClick, ...props }) => {
-      // variant prop 제거
-      return mockReact.createElement('button', { 'data-testid': 'button', onClick, ...props }, children);
-    },
-    Carousel: MockCarousel,
-    Card: MockCard,
+    Button: ({ children, variant, onClick, ...props }) => 
+      mockReact.createElement('button', { 'data-testid': 'button', onClick, ...props }, children),
+    Carousel: ({ children, interval, ...props }) => 
+      mockReact.createElement('div', { 'data-testid': 'carousel', 'data-interval': interval, ...props }, children),
     Table: ({ children, ...props }) => 
       mockReact.createElement('table', { 'data-testid': 'table', ...props }, children),
-    Modal: ({ children, show, onHide, ...props }) => 
-      show ? mockReact.createElement('div', { 'data-testid': 'modal', ...props }, children) : null,
-    'Modal.Header': ({ children, ...props }) => 
+    Input: ({ ...props }) => 
+      mockReact.createElement('input', { 'data-testid': 'input', ...props }),
+    Dropdown: ({ children, ...props }) => 
+      mockReact.createElement('div', { 'data-testid': 'dropdown', ...props }, children),
+    DropdownToggle: ({ children, caret, ...props }) => {
+      // caret prop 제거
+      const { caret: _, ...restProps } = props;
+      return mockReact.createElement('button', { 'data-testid': 'dropdown-toggle', ...restProps }, children);
+    },
+    DropdownMenu: ({ children, ...props }) => 
+      mockReact.createElement('div', { 'data-testid': 'dropdown-menu', ...props }, children),
+    DropdownItem: ({ children, divider, ...props }) => {
+      // divider prop 처리
+      if (divider) {
+        return mockReact.createElement('hr', { 'data-testid': 'dropdown-item' });
+      }
+      return mockReact.createElement('div', { 'data-testid': 'dropdown-item', ...props }, children);
+    },
+    Modal: ({ children, isOpen, toggle, ...props }) => {
+      // toggle prop 제거
+      const { toggle: _, ...restProps } = props;
+      return isOpen ? mockReact.createElement('div', { 'data-testid': 'modal', ...restProps }, children) : null;
+    },
+    ModalHeader: ({ children, toggle, ...props }) => 
       mockReact.createElement('div', { 'data-testid': 'modal-header', ...props }, children),
-    'Modal.Body': ({ children, ...props }) => 
+    ModalBody: ({ children, ...props }) => 
       mockReact.createElement('div', { 'data-testid': 'modal-body', ...props }, children),
-    'Modal.Footer': ({ children, ...props }) => 
-      mockReact.createElement('div', { 'data-testid': 'modal-footer', ...props }, children)
+    ModalFooter: ({ children, ...props }) => 
+      mockReact.createElement('div', { 'data-testid': 'modal-footer', ...props }, children),
+    Card
   };
 });
 
-// reactstrap 모킹 - 개선된 버전
+// reactstrap도 모킹
 jest.mock('reactstrap', () => {
   const mockReact = require('react');
   return {
     Table: ({ children, ...props }) => 
       mockReact.createElement('table', { 'data-testid': 'table', ...props }, children),
-    Button: ({ children, color, onClick, ...props }) => {
-      // color prop 제거
-      return mockReact.createElement('button', { 'data-testid': 'button', onClick, ...props }, children);
-    },
-    Input: ({ type, value, onChange, placeholder, ...props }) => 
-      mockReact.createElement('input', { 
-        'data-testid': 'input', 
-        type, 
-        value, 
-        onChange, 
-        placeholder,
-        ...props 
-      }),
-    Dropdown: ({ children, isOpen, toggle, ...props }) => {
-      // isOpen, toggle props 제거
-      return mockReact.createElement('div', { 'data-testid': 'dropdown', ...props }, children);
-    },
+    Button: ({ children, color, onClick, ...props }) => 
+      mockReact.createElement('button', { 'data-testid': 'button', onClick, ...props }, children),
+    Input: ({ ...props }) => 
+      mockReact.createElement('input', { 'data-testid': 'input', ...props }),
+    Dropdown: ({ children, isOpen, toggle, ...props }) => 
+      mockReact.createElement('div', { 'data-testid': 'dropdown', ...props }, children),
     DropdownToggle: ({ children, caret, ...props }) => {
       // caret prop 제거
-      return mockReact.createElement('button', { 'data-testid': 'dropdown-toggle', ...props }, children);
+      const { caret: _, ...restProps } = props;
+      return mockReact.createElement('button', { 'data-testid': 'dropdown-toggle', ...restProps }, children);
     },
     DropdownMenu: ({ children, ...props }) => 
       mockReact.createElement('div', { 'data-testid': 'dropdown-menu', ...props }, children),
     DropdownItem: ({ children, divider, ...props }) => {
-      // divider prop 제거
+      // divider prop 처리
+      if (divider) {
+        return mockReact.createElement('hr', { 'data-testid': 'dropdown-item' });
+      }
       return mockReact.createElement('div', { 'data-testid': 'dropdown-item', ...props }, children);
     },
-    Modal: ({ children, isOpen, toggle, ...props }) => 
-      isOpen ? mockReact.createElement('div', { 'data-testid': 'modal', ...props }, children) : null,
-    ModalHeader: ({ children, ...props }) => 
-      mockReact.createElement('div', { 'data-testid': 'modal-header', ...props }, children),
+    Modal: ({ children, isOpen, toggle, ...props }) => {
+      // toggle prop 제거
+      const { toggle: _, ...restProps } = props;
+      return isOpen ? mockReact.createElement('div', { 'data-testid': 'modal', ...restProps }, children) : null;
+    },
+    ModalHeader: ({ children, toggle, ...props }) => {
+      // toggle prop을 제거하고 나머지 props만 전달
+      const { toggle: _, ...restProps } = props;
+      return mockReact.createElement('div', { 'data-testid': 'modal-header', ...restProps }, children);
+    },
     ModalBody: ({ children, ...props }) => 
       mockReact.createElement('div', { 'data-testid': 'modal-body', ...props }, children),
     ModalFooter: ({ children, ...props }) => 
@@ -276,9 +209,7 @@ jest.mock('@fortawesome/react-fontawesome', () => ({
 }));
 
 jest.mock('@fortawesome/free-solid-svg-icons', () => ({
-  faSearch: 'faSearch',
-  faUser: 'faUser',
-  faBars: 'faBars'
+  faSearch: 'faSearch'
 }));
 
 // React Router 컴포넌트들 부분 모킹
@@ -293,6 +224,9 @@ jest.mock('react-router-dom', () => ({
     return mockReact.createElement('a', { 'data-testid': 'nav-link', href: to, className, ...props }, children);
   }
 }));
+
+// 이미지 파일 모킹
+jest.mock('../../Assets/profile.jpg', () => 'test-profile-image.jpg');
 
 // 전역 설정들
 Object.defineProperty(window, 'matchMedia', {
@@ -332,7 +266,7 @@ global.sessionStorage = {
 global.confirm = jest.fn(() => true);
 global.alert = jest.fn();
 
-// 콘솔 에러 필터링 - 더 포괄적으로 개선
+// 콘솔 에러 필터링
 const originalError = console.error;
 beforeAll(() => {
   console.error = (...args) => {
@@ -342,6 +276,8 @@ beforeAll(() => {
        args[0].includes('Warning: validateDOMNesting') ||
        args[0].includes('Warning: React.createElement') ||
        args[0].includes('Warning: React.jsx') ||
+       args[0].includes('Warning: Invalid value for prop') ||
+       args[0].includes('Warning: Received') ||
        args[0].includes('Warning: React does not recognize') ||
        args[0].includes('Warning: Received `true` for a non-boolean attribute') ||
        args[0].includes('Warning: Each child in a list should have a unique "key" prop') ||
@@ -355,7 +291,8 @@ beforeAll(() => {
        args[0].includes('expand') ||
        args[0].includes('caret') ||
        args[0].includes('divider') ||
-       args[0].includes('is a void element tag'))
+       args[0].includes('is a void element tag')) ||
+       args[0].includes('for a non-boolean attribute')
     ) {
       return;
     }
@@ -366,3 +303,18 @@ beforeAll(() => {
 afterAll(() => {
   console.error = originalError;
 });
+
+// 이미지 파일들을 일반적으로 모킹
+jest.mock.doMock = jest.fn();
+
+// 일반적인 이미지 파일 확장자들 모킹
+const mockImageFiles = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp'];
+mockImageFiles.forEach(ext => {
+  jest.doMock(`*${ext}`, () => `test-image${ext}`, { virtual: true });
+});
+
+// Assets 폴더의 이미지들 개별 모킹
+jest.mock('../Assets/profile.jpg', () => 'test-profile-image.jpg');
+jest.mock('../Assets/club_logo.png', () => 'test-club-logo.png');
+jest.mock('../Assets/default_background.png', () => 'test-background.png');
+jest.mock('../Assets/image.jpg', () => 'test-image.jpg');
