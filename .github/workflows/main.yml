@@ -303,10 +303,25 @@ jobs:
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
+      # 🏷️ 이미지 참조 정리 단계 (권장 해결책 적용)
+      - name: 🏷️ Extract clean image references
+        id: clean-image-ref
+        run: |
+          # 백엔드 이미지 참조를 정리하고 첫 번째 태그만 추출
+          BACKEND_TAG=$(echo "${{ steps.backend-meta.outputs.tags }}" | head -n1 | tr -d '\n\r')
+          FRONTEND_TAG=$(echo "${{ steps.frontend-meta.outputs.tags }}" | head -n1 | tr -d '\n\r')
+          
+          echo "backend-image=${BACKEND_TAG}" >> $GITHUB_OUTPUT
+          echo "frontend-image=${FRONTEND_TAG}" >> $GITHUB_OUTPUT
+          
+          # 디버깅을 위해 추출된 이미지 이름 출력
+          echo "Backend image for scanning: ${BACKEND_TAG}"
+          echo "Frontend image for scanning: ${FRONTEND_TAG}"
+
       - name: 🔍 Backend image security scan
         uses: aquasecurity/trivy-action@0.32.0
         with:
-          image-ref: ${{ steps.backend-meta.outputs.tags }}
+          image-ref: ${{ steps.clean-image-ref.outputs.backend-image }}
           format: 'sarif'
           output: 'backend-trivy.sarif'
           severity: 'CRITICAL,HIGH'
@@ -314,7 +329,7 @@ jobs:
       - name: 🔍 Frontend image security scan
         uses: aquasecurity/trivy-action@0.32.0
         with:
-          image-ref: ${{ steps.frontend-meta.outputs.tags }}
+          image-ref: ${{ steps.clean-image-ref.outputs.frontend-image }}
           format: 'sarif'
           output: 'frontend-trivy.sarif'
           severity: 'CRITICAL,HIGH'
