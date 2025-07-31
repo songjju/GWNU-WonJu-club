@@ -309,6 +309,7 @@ jobs:
           image-ref: ${{ steps.backend-meta.outputs.tags }}
           format: 'sarif'
           output: 'backend-trivy.sarif'
+          severity: 'CRITICAL,HIGH'
 
       - name: 🔍 Frontend image security scan
         uses: aquasec/trivy-action@master
@@ -316,12 +317,21 @@ jobs:
           image-ref: ${{ steps.frontend-meta.outputs.tags }}
           format: 'sarif'
           output: 'frontend-trivy.sarif'
+          severity: 'CRITICAL,HIGH'
 
-      - name: Upload security scan results
-        uses: github/codeql-action/upload-sarif@v2
+      - name: 📋 Upload security scan results (Backend)
+        uses: github/codeql-action/upload-sarif@v3  # v2 -> v3 업데이트
         if: always()
         with:
           sarif_file: 'backend-trivy.sarif'
+          category: 'backend-security'
+
+      - name: 📋 Upload security scan results (Frontend)  
+        uses: github/codeql-action/upload-sarif@v3  # v2 -> v3 업데이트
+        if: always()
+        with:
+          sarif_file: 'frontend-trivy.sarif'
+          category: 'frontend-security'
   
   # 🚀 안전한 배포
   deploy:
