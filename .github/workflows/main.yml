@@ -579,8 +579,7 @@ jobs:
                       "short": true
                     }
                   ],
-                  "footer": "GitHub Actions",
-                  "ts": ${{ github.event.head_commit.timestamp != null && github.event.head_commit.timestamp || github.event.repository.updated_at }}
+                  "footer": "GitHub Actions"
                 }
               ]
             }
