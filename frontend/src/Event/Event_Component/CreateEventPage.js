@@ -10,5 +10,5 @@ const CreateEventPage = () => {
       <CreateEvent />
     </div>
   );
-}
+};
 export default CreateEventPage;

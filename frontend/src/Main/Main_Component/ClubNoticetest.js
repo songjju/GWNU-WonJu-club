@@ -1,9 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import '../Main_Style/ClubNotice.module.css';
-import { Table, Button, Input, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
-import { useNavigate } from 'react-router-dom';
-import API_BASE_URL from '../../config/apiConfig';
+import React, { useEffect, useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "../Main_Style/ClubNotice.module.css";
+import {
+  Table,
+  Button,
+  Input,
+  Dropdown,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "reactstrap";
+import { useNavigate } from "react-router-dom";
+import API_BASE_URL from "../../config/apiConfig";
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const handlePageChange = (page) => {
@@ -19,20 +31,36 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   return (
     <nav className="pagination-nav">
       <ul className="pagination justify-content-center">
-        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-          <button className="page-link custom-page-link" onClick={() => handlePageChange(currentPage - 1)}>
+        <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+          <button
+            className="page-link custom-page-link"
+            onClick={() => handlePageChange(currentPage - 1)}
+          >
             &lt;
           </button>
         </li>
         {[...Array(totalPages)].map((_, index) => (
-          <li key={index + 1} className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}>
-            <button className="page-link custom-page-link" onClick={() => handlePageChange(index + 1)}>
+          <li
+            key={index + 1}
+            className={`page-item ${currentPage === index + 1 ? "active" : ""}`}
+          >
+            <button
+              className="page-link custom-page-link"
+              onClick={() => handlePageChange(index + 1)}
+            >
               {index + 1}
             </button>
           </li>
         ))}
-        <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-          <button className="page-link custom-page-link" onClick={() => handlePageChange(currentPage + 1)}>
+        <li
+          className={`page-item ${
+            currentPage === totalPages ? "disabled" : ""
+          }`}
+        >
+          <button
+            className="page-link custom-page-link"
+            onClick={() => handlePageChange(currentPage + 1)}
+          >
             &gt;
           </button>
         </li>
@@ -46,28 +74,31 @@ const ClubNotice = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [tags, setTags] = useState([]);
-  const [selectedTag, setSelectedTag] = useState('');
+  const [selectedTag, setSelectedTag] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   const isLoggedIn = !!token;
-  const isClubOfficer = localStorage.getItem('isClubOfficer') === 'true';
+  const isClubOfficer = localStorage.getItem("isClubOfficer") === "true";
 
   const fetchNotices = (page, search, sort, tag) => {
     setIsLoading(true);
-    fetch(`${API_BASE_URL}/club_board/notice/?page=${page}&search=${search}&ordering=${sort}&tag=${tag}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Token ${token}`,
-      },
-    })
+    fetch(
+      `${API_BASE_URL}/club_board/notice/?page=${page}&search=${search}&ordering=${sort}&tag=${tag}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${token}`,
+        },
+      }
+    )
       .then((response) => response.json())
       .then((data) => {
         setNotices(data.results);
@@ -85,10 +116,10 @@ const ClubNotice = () => {
 
   const fetchTags = () => {
     fetch(`${API_BASE_URL}/club_board/tags/`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Token ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Token ${token}`,
       },
     })
       .then((response) => response.json())
@@ -99,9 +130,9 @@ const ClubNotice = () => {
   };
 
   const adjustPadding = () => {
-    const container = document.querySelector('.club-notice-container');
+    const container = document.querySelector(".club-notice-container");
     if (container) {
-      container.style.paddingTop = '100px';
+      container.style.paddingTop = "100px";
     }
   };
 
@@ -116,10 +147,11 @@ const ClubNotice = () => {
 
   const toggleDropdown = () => setDropdownOpen((prevState) => !prevState);
   const toggleLoginModal = () => setIsLoginModalOpen((prevState) => !prevState);
-  const toggleWarningModal = () => setIsWarningModalOpen((prevState) => !prevState);
+  const toggleWarningModal = () =>
+    setIsWarningModalOpen((prevState) => !prevState);
 
   const handleWriteButtonClick = () => {
-    navigate('/create-notice');
+    navigate("/create-notice");
   };
 
   const handleSortOrderChange = (order) => {
@@ -144,15 +176,24 @@ const ClubNotice = () => {
               정렬
             </DropdownToggle>
             <DropdownMenu>
-              <DropdownItem onClick={() => setSelectedTag('')}>전체</DropdownItem>
+              <DropdownItem onClick={() => setSelectedTag("")}>
+                전체
+              </DropdownItem>
               {tags.map((tag) => (
-                <DropdownItem key={tag.id} onClick={() => setSelectedTag(tag.name)}>
+                <DropdownItem
+                  key={tag.id}
+                  onClick={() => setSelectedTag(tag.name)}
+                >
                   {tag.name}
                 </DropdownItem>
               ))}
               <DropdownItem divider />
-              <DropdownItem onClick={() => handleSortOrderChange('desc')}>최신순</DropdownItem>
-              <DropdownItem onClick={() => handleSortOrderChange('asc')}>오래된 순</DropdownItem>
+              <DropdownItem onClick={() => handleSortOrderChange("desc")}>
+                최신순
+              </DropdownItem>
+              <DropdownItem onClick={() => handleSortOrderChange("asc")}>
+                오래된 순
+              </DropdownItem>
             </DropdownMenu>
           </Dropdown>
         </div>
@@ -177,7 +218,9 @@ const ClubNotice = () => {
                 ? Array.from({ length: 5 }).map((_, index) => (
                     <tr key={index}>
                       <td>{index + 1}</td>
-                      <td colSpan="4" className="no-notice">공지사항이 없습니다.</td>
+                      <td colSpan="4" className="no-notice">
+                        공지사항이 없습니다.
+                      </td>
                     </tr>
                   ))
                 : notices.map((notice, index) => (
@@ -195,20 +238,37 @@ const ClubNotice = () => {
                   ))}
             </tbody>
           </Table>
-          <Button color="primary" onClick={handleWriteButtonClick} className="btn write-btn">글쓰기</Button>
+          <Button
+            color="primary"
+            onClick={handleWriteButtonClick}
+            className="btn write-btn"
+          >
+            글쓰기
+          </Button>
         </div>
       )}
 
       <div className="pagination-container">
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       <Modal isOpen={isLoginModalOpen} toggle={toggleLoginModal}>
         <ModalHeader toggle={toggleLoginModal}>로그인 필요</ModalHeader>
         <ModalBody>임원만 작성할 수 있습니다. 로그인하시겠습니까?</ModalBody>
         <ModalFooter>
-          <Button color="primary" onClick={() => window.location.href = '/login'}>로그인</Button>{' '}
-          <Button color="secondary" onClick={toggleLoginModal}>취소</Button>
+          <Button
+            color="primary"
+            onClick={() => (window.location.href = "/login")}
+          >
+            로그인
+          </Button>{" "}
+          <Button color="secondary" onClick={toggleLoginModal}>
+            취소
+          </Button>
         </ModalFooter>
       </Modal>
 
@@ -216,7 +276,9 @@ const ClubNotice = () => {
         <ModalHeader toggle={toggleWarningModal}>권한 없음</ModalHeader>
         <ModalBody>임원만 작성할 수 있습니다.</ModalBody>
         <ModalFooter>
-          <Button color="secondary" onClick={toggleWarningModal}>확인</Button>
+          <Button color="secondary" onClick={toggleWarningModal}>
+            확인
+          </Button>
         </ModalFooter>
       </Modal>
     </div>

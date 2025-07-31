@@ -16,7 +16,6 @@
   text-decoration: none;
 }
 
-
 .sub-menu {
   position: absolute; /* 서브 메뉴를 절대 위치로 설정 */
   top: 100%; /* 부모 요소 아래에 위치하도록 설정 */
@@ -47,12 +46,10 @@
   background-color: #f5f5f5;
 }
 
-
 /* 마우스를 올렸을 때 카테고리 아이템의 효과 */
 .category-item:hover {
   transform: scale(1.05); /* 마우스를 올렸을 때 약간 확대됩니다. */
 }
-
 
 .link-style {
   text-decoration: none;
@@ -81,6 +78,11 @@
 
 /* 서브메뉴가 표시될 때 클릭 이벤트를 가로챌 레이어가 표시되면서 배경을 어둡게 만들기 위한 스타일 */
 .overlay.active {
-  background-color: rgba(0, 0, 0, 0.5); /* 투명한 검은색 배경을 통해 다른 요소를 가리도록 설정 */
+  background-color: rgba(
+    0,
+    0,
+    0,
+    0.5
+  ); /* 투명한 검은색 배경을 통해 다른 요소를 가리도록 설정 */
   /* 원하는 투명도 및 색상으로 설정 가능 */
 }

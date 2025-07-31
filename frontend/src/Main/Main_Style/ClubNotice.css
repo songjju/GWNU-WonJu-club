@@ -86,8 +86,8 @@
 }
 
 .btn:hover {
-  background-color: #90CAF9;
-  border-color: #90CAF9;
+  background-color: #90caf9;
+  border-color: #90caf9;
 }
 
 .table thead th {
@@ -109,5 +109,5 @@
 }
 
 .custom-page-link:hover {
-  border-color: #90CAF9 !important;
+  border-color: #90caf9 !important;
 }

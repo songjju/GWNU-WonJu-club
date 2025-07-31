@@ -6,7 +6,7 @@
   height: 100vh;
   min-width: 100%;
   background-color: #ffffff; /* 변경된 배경색 */
-  
+
   padding: 0 20px;
   box-sizing: border-box;
 }
@@ -33,7 +33,7 @@
   font-size: 1.8rem;
   margin-bottom: 2rem;
   text-align: center;
-  color: #42A5F5; /* 변경된 색상 */
+  color: #42a5f5; /* 변경된 색상 */
 }
 
 .login-page .login-form-group {
@@ -43,7 +43,7 @@
 .login-page .login-form-group label {
   display: block;
   font-size: 0.875rem;
-  color: #42A5F5; /* 변경된 색상 */
+  color: #42a5f5; /* 변경된 색상 */
 }
 
 .login-page .login-form-control {
@@ -51,14 +51,14 @@
   padding: 0.5rem;
   margin-top: 0.5rem;
   border: none;
-  border-bottom: 2px solid #42A5F5; /* 변경된 색상 */
+  border-bottom: 2px solid #42a5f5; /* 변경된 색상 */
   background: none;
   outline: none;
-  color: #42A5F5; /* 변경된 색상 */
+  color: #42a5f5; /* 변경된 색상 */
 }
 
 .login-page .login-form-control::placeholder {
-  color: #90CAF9; /* 변경된 색상 */
+  color: #90caf9; /* 변경된 색상 */
 }
 
 /* 버튼 스타일 */
@@ -77,26 +77,26 @@
 }
 
 .login-page .btn-primary {
-  background-color: #42A5F5; /* 변경된 색상 */
+  background-color: #42a5f5; /* 변경된 색상 */
   color: #ffffff;
 }
 
 .login-page .btn-primary:hover {
-  background-color: #64B5F6; /* 변경된 색상 */
+  background-color: #64b5f6; /* 변경된 색상 */
 }
 
 .login-page .btn-secondary {
-  background-color: #64B5F6; /* 변경된 색상 */
+  background-color: #64b5f6; /* 변경된 색상 */
   color: #ffffff;
   margin-top: 1rem;
 }
 
 .login-page .btn-secondary:hover {
-  background-color: #90CAF9; /* 변경된 색상 */
+  background-color: #90caf9; /* 변경된 색상 */
 }
 
 .login-page .login-image {
   flex: 1;
-  background: url('./로그인사진.jpg') no-repeat center center;
+  background: url("./로그인사진.jpg") no-repeat center center;
   background-size: cover;
 }

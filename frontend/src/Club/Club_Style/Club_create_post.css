@@ -1,16 +1,15 @@
-.Back-button{
-    background-color: gray;
-    border-color: gray;
-    }
-
-
-.Back-button:hover {
-background-color: gray;
-border-color: gray;
+.Back-button {
+  background-color: gray;
+  border-color: gray;
 }
 
-.button-container{
-    display: flex;
-    gap:10px;
-    padding: 10px;
+.Back-button:hover {
+  background-color: gray;
+  border-color: gray;
+}
+
+.button-container {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
 }

@@ -1,52 +1,51 @@
 .create-notice-container {
-    width: 100%;
-    max-width: 100%;
-    padding: 40px;
-    background-color: #fff;
-  }
-  
-  .title {
-    font-size: 2.5em !important;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  
-  .title-underline {
-    width: 100%;
-    height: 1px;
-    background-color: #343434;
-    margin-bottom: 40px;
-    margin-top: 40px;
-  }
-  
-  form {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  form .form-group {
-    margin-bottom: 15px;
-  }
-  
-  form .form-group label {
-    font-weight: bold;
-  }
-  
-  form .form-group input,
-  form .form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  .buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-  
-  .buttons button {
-    padding: 10px 20px;
-  }
-  
+  width: 100%;
+  max-width: 100%;
+  padding: 40px;
+  background-color: #fff;
+}
+
+.title {
+  font-size: 2.5em !important;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.title-underline {
+  width: 100%;
+  height: 1px;
+  background-color: #343434;
+  margin-bottom: 40px;
+  margin-top: 40px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+form .form-group {
+  margin-bottom: 15px;
+}
+
+form .form-group label {
+  font-weight: bold;
+}
+
+form .form-group input,
+form .form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.buttons button {
+  padding: 10px 20px;
+}

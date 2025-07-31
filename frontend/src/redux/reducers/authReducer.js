@@ -1,8 +1,8 @@
-import { LOGIN_SUCCESS, LOGOUT } from '../actionTypes';
+import { LOGIN_SUCCESS, LOGOUT } from "../actionTypes";
 
 const initialState = {
   user: null,
-  isLoggedIn: false
+  isLoggedIn: false,
 };
 
 const authReducer = (state = initialState, action) => {
@@ -11,13 +11,13 @@ const authReducer = (state = initialState, action) => {
       return {
         ...state,
         user: action.payload,
-        isLoggedIn: true
+        isLoggedIn: true,
       };
     case LOGOUT:
       return {
         ...state,
         user: null,
-        isLoggedIn: false
+        isLoggedIn: false,
       };
     default:
       return state;

@@ -1,81 +1,79 @@
 .club-event-box {
-margin-left: 10%;
-width: 80%;
-margin-top: 20px;
-  }
-.create-event-container{
-  display: flex;
-  
+  margin-left: 10%;
+  width: 80%;
+  margin-top: 20px;
 }
-.create-event-button{
+.create-event-container {
+  display: flex;
+}
+.create-event-button {
   right: 15%;
   position: absolute;
 }
-  .club-event-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-  }
-  
-  .club-event-link {
-    text-decoration: none;
-    color: inherit;
-  }
-  
-  .club-event {
-    border: 1px solid #ccc;
-    padding: 20px;
-    border-radius: 5px;
-  }
-  
-  .event h3 {
-    margin-top: 0;
-    font-size: 18px;
-  }
-  
-  .event p {
-    margin: 10px 0;
-    font-size: 14px;
-  }
-  
-  .pagination {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-  }
-  
-  .pagination button {
-    margin: 0 5px;
-    padding: 5px 10px;
-    border: 1px solid #ccc;
-    background-color: #fff;
-    cursor: pointer;
-  }
-  
-  .pagination button:hover {
-    background-color: #f0f0f0;
-  }
-  
-  .search-container {
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-  }
-  
-  .search-container select,
-  .search-container input[type="text"] {
-    margin-right: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  .search-container select {
-    width: 120px;
-  }
-  
-  .search-container input[type="text"] {
-    flex: 1;
-    max-width: 300px;
-  }
-  
+.club-event-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.club-event-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.club-event {
+  border: 1px solid #ccc;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.event h3 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+.event p {
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.pagination button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.pagination button:hover {
+  background-color: #f0f0f0;
+}
+
+.search-container {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.search-container select,
+.search-container input[type="text"] {
+  margin-right: 10px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.search-container select {
+  width: 120px;
+}
+
+.search-container input[type="text"] {
+  flex: 1;
+  max-width: 300px;
+}

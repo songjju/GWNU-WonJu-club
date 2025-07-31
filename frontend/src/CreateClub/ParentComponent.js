@@ -1,5 +1,5 @@
-import React from 'react';
-import CreateClubPage from './CreateClubPage';
+import React from "react";
+import CreateClubPage from "./CreateClubPage";
 
 const ParentComponent = () => {
   return (

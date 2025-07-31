@@ -1,14 +1,14 @@
-import API_BASE_URL from '../../../config/apiConfig'; // API 설정 임포트
+import API_BASE_URL from "../../../config/apiConfig"; // API 설정 임포트
 
 // 게시글 번호에 해당하는 게시글 또는 공지사항 가져오기
-const getPostByNo = async (postId,token) => {
-  let url = '${API_BASE_URL}/club_board/post_detail/'+postId;
+const getPostByNo = async (postId, token) => {
+  let url = "${API_BASE_URL}/club_board/post_detail/" + postId;
   let options = {
-    method: 'GET',
+    method: "GET",
     headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json;charset=UTF-8',
-        Authorization: `Token ${token}`
+      Accept: "application/json",
+      "Content-Type": "application/json;charset=UTF-8",
+      Authorization: `Token ${token}`,
     },
   };
 
@@ -22,14 +22,14 @@ const getPostByNo = async (postId,token) => {
 };
 
 // 추천 수 증가 함수
-export const increaseRecommendCount =  async(post_id,token) => {
+export const increaseRecommendCount = async (post_id, token) => {
   const url = `${API_BASE_URL}/club_board/post_recommend/${post_id}/`;
   const options = {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json;charset=UTF-8',
-      Authorization: `Token ${token}`
+      Accept: "application/json",
+      "Content-Type": "application/json;charset=UTF-8",
+      Authorization: `Token ${token}`,
     },
   };
 
@@ -41,41 +41,43 @@ export const increaseRecommendCount =  async(post_id,token) => {
   } catch (err) {
     console.log(err);
   }
-}
+};
 
 // 게시글 삭제 함수
-export async function deletePost(postId,token) {
+export async function deletePost(postId, token) {
   try {
-    const response = await fetch(`${API_BASE_URL}/club_board/post_detail/${postId}/`, {
-      method: 'DELETE',
-      headers: {
-        'Accept': 'application/json',
-        Authorization: `Token ${token}`
-      },
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/club_board/post_detail/${postId}/`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Token ${token}`,
+        },
+      }
+    );
     if (!response.ok) {
-      throw new Error('Failed to delete post');
+      throw new Error("Failed to delete post");
     }
     console.log(`Post with ID ${postId} deleted successfully.`);
   } catch (error) {
-    console.error('Error deleting post:', error.message);
+    console.error("Error deleting post:", error.message);
   }
 }
 
 // 댓글 수정 삭제 함수
-export const handleComment = async(method, comment_id, token, data='') => {
-  const url = `${API_BASE_URL}/club_board/comment_detail/${comment_id}/`
+export const handleComment = async (method, comment_id, token, data = "") => {
+  const url = `${API_BASE_URL}/club_board/comment_detail/${comment_id}/`;
   const options = {
     method: method,
     headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json;charset=UTF-8',
-      Authorization: `Token ${token}`
-    }
+      Accept: "application/json",
+      "Content-Type": "application/json;charset=UTF-8",
+      Authorization: `Token ${token}`,
+    },
   };
-  if (method != 'DELETE') {
-
-    options.body = JSON.stringify({content: data});
+  if (method != "DELETE") {
+    options.body = JSON.stringify({ content: data });
   }
 
   try {
@@ -86,21 +88,22 @@ export const handleComment = async(method, comment_id, token, data='') => {
   } catch (err) {
     console.log(err);
   }
-}
+};
 
-export const createComment = async(post_id, content,token) => { // TODO post_id back front 수정
+export const createComment = async (post_id, content, token) => {
+  // TODO post_id back front 수정
   const url = `${API_BASE_URL}/club_board/comment_create/`;
   const options = {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json;charset=UTF-8',
-      Authorization: `Token ${token}`
+      Accept: "application/json",
+      "Content-Type": "application/json;charset=UTF-8",
+      Authorization: `Token ${token}`,
     },
     body: JSON.stringify({
       content: content,
-      post_id: post_id
-    })
+      post_id: post_id,
+    }),
   };
 
   try {
@@ -110,9 +113,7 @@ export const createComment = async(post_id, content,token) => { // TODO post_id 
   } catch (err) {
     console.log(err);
   }
-}
-
-
+};
 
 export {
   getPostByNo,

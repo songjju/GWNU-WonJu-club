@@ -1,34 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { Container, Button, Row, Col } from "react-bootstrap";
-import axios from 'axios';
+import axios from "axios";
 import defaultImage from "../Mypage/profile.jpg";
 import logo from "../Mypage/logo.png";
-import API_BASE_URL from '../config/apiConfig';
+import API_BASE_URL from "../config/apiConfig";
 
 const UserDetails = () => {
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(localStorage.getItem("token"));
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
+    const storedToken = localStorage.getItem("token");
     if (storedToken) {
       setToken(storedToken);
       getUserDetails();
     }
-    
   }, [token]);
 
   const getUserDetails = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/club_account/user/`, {
         headers: {
-          Authorization: `Token ${token}`
-        }
+          Authorization: `Token ${token}`,
+        },
       });
       const data = response.data;
       setUserData(data);
     } catch (error) {
-      console.error('Error fetching user details:', error);
+      console.error("Error fetching user details:", error);
     }
   };
 
@@ -40,10 +39,12 @@ const UserDetails = () => {
           <div className="profile-panel">
             <h2 className="details-head">사용자 정보</h2>
 
-            <img src={defaultImage}
-                  alt="프로필 사진"
-                  className="profile-image"/>
-          
+            <img
+              src={defaultImage}
+              alt="프로필 사진"
+              className="profile-image"
+            />
+
             <div className="details-info">
               <p>
                 <strong>이름: </strong> {userData?.name}
@@ -57,11 +58,8 @@ const UserDetails = () => {
               <p>
                 <strong>소속 학과:</strong> {userData?.study}
               </p>
-              <p>
-                {/* <strong>가입일:</strong> {userData?.date_joined} */}
-              </p>
+              <p>{/* <strong>가입일:</strong> {userData?.date_joined} */}</p>
             </div>
-
           </div>
         </Col>
 
@@ -71,7 +69,7 @@ const UserDetails = () => {
           <div className="myclub-panel">
             <h2 className="myclub-head">나의 동아리</h2>
 
-            <img src={logo} alt="동아리 로고" className="club-logo"/>
+            <img src={logo} alt="동아리 로고" className="club-logo" />
             <div className="club-info">
               <p>
                 <strong>가입 동아리 이름</strong>
@@ -81,7 +79,6 @@ const UserDetails = () => {
               </p>
             </div>
           </div>
-          
         </Col>
       </Row>
     </Container>

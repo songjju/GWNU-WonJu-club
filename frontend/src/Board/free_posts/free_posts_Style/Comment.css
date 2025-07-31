@@ -1,72 +1,65 @@
-
 /* Comments Styles */
 .post-view-comments {
-    margin-bottom: 20px;
-  }
+  margin-bottom: 20px;
+}
 
 .post-view-comments h3 {
-    font-weight: bold;
-    font-size: 24px;
-    color: #333;
-    margin-bottom: 20px;
+  font-weight: bold;
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 20px;
 }
 
 .post-view-comments-list {
-    list-style: none;
-    padding: 0;
+  list-style: none;
+  padding: 0;
 }
 
 .post-view-comment {
-
-    margin-bottom: 20px;
-    padding: 20px;
-    background-color: #f8f8f8; /* 연한 회색 배경색으로 변경 */
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  padding: 20px;
+  background-color: #f8f8f8; /* 연한 회색 배경색으로 변경 */
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .content-comment-user-info {
-    padding: 10px; 
-    border-radius: 5px; 
-    flex: 1;
-    display: flex; 
-    align-items: center; /* 요소들을 수직 중앙 정렬 */
-    justify-content: space-between; /* 요소들을 가로로 공간을 나누어 배치 */
+  padding: 10px;
+  border-radius: 5px;
+  flex: 1;
+  display: flex;
+  align-items: center; /* 요소들을 수직 중앙 정렬 */
+  justify-content: space-between; /* 요소들을 가로로 공간을 나누어 배치 */
 }
 
 .content-ect {
-    text-align: right;
-    
+  text-align: right;
 }
 .author-name {
-    margin-right: 10px; /* 작성자와 시간 사이의 공백을 추가합니다. */
+  margin-right: 10px; /* 작성자와 시간 사이의 공백을 추가합니다. */
 }
-
 
 /* 삭제 및 편집 버튼 스타일링 */
 .post-view-comment button {
-    margin-left: 12px; 
-    background-color: #5784eb; 
-    color: white; 
-    border: none; 
-    padding: 5px 10px;
-    border-radius: 5px; 
-    cursor: pointer; 
-    flex-shrink: 0; 
-
+  margin-left: 12px;
+  background-color: #5784eb;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
-
-
 .post-view-add-comment {
-    margin-bottom: 20px;
-    display: flex;
+  margin-bottom: 20px;
+  display: flex;
 }
 
 .post-view-comment-input {
-    flex-grow: 1;
-    padding: 15px 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
+  flex-grow: 1;
+  padding: 15px 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
 }

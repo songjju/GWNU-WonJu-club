@@ -1,44 +1,43 @@
-import React from 'react';
-import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
+import React from "react";
+import { render } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
+import { Provider } from "react-redux";
+import { configureStore } from "@reduxjs/toolkit";
 
 // 컴포넌트 import
 let Club_body;
 try {
-  const module = require('./Club_body');
+  const module = require("./Club_body");
   Club_body = module.default || module.Club_body || module;
 } catch (error) {
   Club_body = () => <div data-testid="Club_body">Mock Club_body</div>;
 }
 
 // 테스트용 스토어
-const createTestStore = () => configureStore({
-  reducer: {
-    auth: (state = { isLoggedIn: false }, action) => state
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({ serializableCheck: false })
-});
+const createTestStore = () =>
+  configureStore({
+    reducer: {
+      auth: (state = { isLoggedIn: false }, action) => state,
+    },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({ serializableCheck: false }),
+  });
 
 const TestWrapper = ({ children }) => {
   const store = createTestStore();
   return (
     <Provider store={store}>
-      <BrowserRouter>
-        {children}
-      </BrowserRouter>
+      <BrowserRouter>{children}</BrowserRouter>
     </Provider>
   );
 };
 
-describe('Club_body', () => {
-  test('컴포넌트가 정의되어 있다', () => {
+describe("Club_body", () => {
+  test("컴포넌트가 정의되어 있다", () => {
     expect(Club_body).toBeDefined();
   });
 
-  test('에러 없이 렌더링된다', () => {
+  test("에러 없이 렌더링된다", () => {
     try {
       render(
         <TestWrapper>

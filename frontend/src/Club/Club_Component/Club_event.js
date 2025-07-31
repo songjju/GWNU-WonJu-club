@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import "../Club_Style/Club_event.css";
-import ClubHeader from "./Club_head.js"
-import { Button } from 'react-bootstrap';
-import API_BASE_URL from '../../config/apiConfig.js';
+import ClubHeader from "./Club_head.js";
+import { Button } from "react-bootstrap";
+import API_BASE_URL from "../../config/apiConfig.js";
 
 const ClubEvent = () => {
   const { club_name } = useParams();
@@ -19,15 +19,18 @@ const ClubEvent = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/club_information/club/${club_name}/events/`, {
-          params: {
-            search_type: searchOption,
-            search_query: searchText
+        const response = await axios.get(
+          `${API_BASE_URL}/club_information/club/${club_name}/events/`,
+          {
+            params: {
+              search_type: searchOption,
+              search_query: searchText,
+            },
           }
-        });
+        );
         setEvents(response.data);
       } catch (error) {
-        console.error('Error fetching events:', error);
+        console.error("Error fetching events:", error);
       }
     };
 
@@ -42,7 +45,10 @@ const ClubEvent = () => {
   }, [events, page]);
 
   const totalPages = Math.ceil(events.length / (eventsPerPage * 3));
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+  const pageNumbers = Array.from(
+    { length: totalPages },
+    (_, index) => index + 1
+  );
 
   const handlePageChange = (pageNumber) => {
     setPage(pageNumber);
@@ -56,15 +62,15 @@ const ClubEvent = () => {
     setSearchText(e.target.value);
   };
   const handleClickCreateEvent = () => {
-    navigate(`/club_information/club/${club_name}/create_club_event`)
+    navigate(`/club_information/club/${club_name}/create_club_event`);
   };
   return (
     <div className="club-event-container">
-      <div className='club-event-container'>
+      <div className="club-event-container">
         <ClubHeader clubName={club_name} />
         <div className="club-event-box">
-          <h2 className='club-head-text'>일정</h2>
-          <div className='create-event-container'>
+          <h2 className="club-head-text">일정</h2>
+          <div className="create-event-container">
             <div className="search-container">
               <select value={searchOption} onChange={handleSearchOptionChange}>
                 <option value="all">전체</option>
@@ -81,10 +87,12 @@ const ClubEvent = () => {
               />
             </div>
             <div className="create-event-button">
-              <Button onClick={() => handleClickCreateEvent()}>일정 등록</Button>
+              <Button onClick={() => handleClickCreateEvent()}>
+                일정 등록
+              </Button>
             </div>
           </div>
-    {/* <div className='club-event-container'>
+          {/* <div className='club-event-container'>
     <ClubHeader clubName={club_name} />
     <div className="club-event-box">
       <h2 className='club-head-text'>일정</h2>
@@ -110,7 +118,11 @@ const ClubEvent = () => {
       </div> */}
           <div className="club-event-list">
             {displayedEvents.map((event) => (
-              <Link to={`/club_board/post_detail/${event.id}/`} key={event.id} className="event-link">
+              <Link
+                to={`/club_board/post_detail/${event.id}/`}
+                key={event.id}
+                className="event-link"
+              >
                 <img src={event.photo} alt={event.title} />
                 <div className="gallery-title">{event.title}</div>
                 <div className="gallery-recommend">{`추천수: ${event.recommended_cnt}`}</div>

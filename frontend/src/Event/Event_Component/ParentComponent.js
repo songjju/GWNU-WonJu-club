@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import CreateEvent from './CreateEvent';
-import EventCard from '../Main/EventCard';
+import React, { useState } from "react";
+import CreateEvent from "./CreateEvent";
+import EventCard from "../Main/EventCard";
 
 function ParentComponent() {
   const [events, setEvents] = useState([]);

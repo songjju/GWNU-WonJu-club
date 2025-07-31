@@ -2,25 +2,24 @@
 
 /* 반응형 디자인 적용 */
 @media (max-width: 768px) {
-    .MainPage {
-      height: auto; /* 모바일에서는 기본 스크롤 사용 */
-    }
-  
-    .section {
-      height: auto;
-      min-height: 100vh; /* 최소 높이를 설정 */
-    }
-  
-    .carousel-image {
-      height: auto;
-    }
-  
-    .notice-section {
-      padding: 0 10px;
-    }
-  
-    .table {
-      font-size: 14px;
-    }
+  .MainPage {
+    height: auto; /* 모바일에서는 기본 스크롤 사용 */
   }
-  
+
+  .section {
+    height: auto;
+    min-height: 100vh; /* 최소 높이를 설정 */
+  }
+
+  .carousel-image {
+    height: auto;
+  }
+
+  .notice-section {
+    padding: 0 10px;
+  }
+
+  .table {
+    font-size: 14px;
+  }
+}

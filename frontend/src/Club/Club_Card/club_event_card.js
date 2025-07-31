@@ -1,14 +1,24 @@
 import "./club_event_card.css";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-export const EventCard = ({board_id, title, content, img, username, date}) => {
+export const EventCard = ({
+  board_id,
+  title,
+  content,
+  img,
+  username,
+  date,
+}) => {
   const navigate = useNavigate();
   return (
-    <div className="eventcard-wrapper" onClick={() => {
-      navigate(`/board/${board_id}`)
-    }}>
+    <div
+      className="eventcard-wrapper"
+      onClick={() => {
+        navigate(`/board/${board_id}`);
+      }}
+    >
       <div className="eventcard-body-img">
-        <img src={img}/>
+        <img src={img} />
       </div>
       <div className="eventcard-body-text">
         <div className="eventcard-body-text-title">{title}</div>
@@ -23,4 +33,3 @@ export const EventCard = ({board_id, title, content, img, username, date}) => {
 };
 
 export default EventCard();
-

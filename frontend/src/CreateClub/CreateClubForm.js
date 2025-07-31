@@ -50,7 +50,7 @@ const CreateClubForm = ({ addClub }) => {
   };
 
   return (
-    <Container  className ="create-club-container"style={{ padding: "5%" }}>
+    <Container className="create-club-container" style={{ padding: "5%" }}>
       <h1 className="create-head">동아리 만들기</h1>
       <Form onSubmit={handleSubmit}>
         <Form.Group controlId="clubName">

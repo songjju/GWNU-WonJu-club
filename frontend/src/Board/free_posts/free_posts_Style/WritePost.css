@@ -41,7 +41,7 @@
 .write-form-group input:focus,
 .write-form-group textarea:focus,
 .form-group select:focus {
-  border-color: #64B5F6;
+  border-color: #64b5f6;
   outline: none;
 }
 
@@ -80,34 +80,35 @@
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
   margin: 5px;
 }
 
 .button-primary {
-  background-color: #42A5F5;
+  background-color: #42a5f5;
   color: #fff;
 }
 
 .button-primary:hover {
-  background-color: #64B5F6;
+  background-color: #64b5f6;
   transform: translateY(-3px);
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
 .button-secondary {
-  background-color: #90CAF9;
+  background-color: #90caf9;
   color: #fff;
 }
 
 .button-secondary:hover {
-  background-color: #64B5F6;
+  background-color: #64b5f6;
   transform: translateY(-3px);
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
 .submit-button {
-  background-color: #90CAF9;
+  background-color: #90caf9;
   color: #fff;
   padding: 8px 16px;
   font-size: 14px;
@@ -115,13 +116,14 @@
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
   text-align: center;
   white-space: nowrap;
 }
 
 .submit-button:hover {
-  background-color: #64B5F6;
+  background-color: #64b5f6;
   transform: translateY(-3px);
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
@@ -135,7 +137,7 @@
 
 .post-type label {
   font-weight: bold;
-  color: #42A5F5;
+  color: #42a5f5;
   margin-right: 10px;
 }
 

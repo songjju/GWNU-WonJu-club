@@ -1,30 +1,32 @@
 /* App.css */
 .content {
-    height: 100%;
-  }
-  
-  .content-main {
-    padding: 0px;
-  }
-  
-  .content-padding .content-main {
-    padding-top: 80px; /* 원하는 padding-top 값 */
-  }
-  
-  * {
+  height: 100%;
+}
+
+.content-main {
+  padding: 0px;
+}
+
+.content-padding .content-main {
+  padding-top: 80px; /* 원하는 padding-top 값 */
+}
+
+* {
   font-family: "MaruBuri-Regular" !important;
 }
 
 @font-face {
-  font-family: 'MaruBuri-Regular';
-  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-10-21@1.0/MaruBuri-Regular.woff') format('woff');
+  font-family: "MaruBuri-Regular";
+  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-10-21@1.0/MaruBuri-Regular.woff")
+    format("woff");
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
-  font-family: 'NEXON Lv1 Gothic OTF';
-  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/NEXON Lv1 Gothic OTF.woff') format('woff');
+  font-family: "NEXON Lv1 Gothic OTF";
+  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/NEXON Lv1 Gothic OTF.woff")
+    format("woff");
   font-weight: normal;
   font-style: normal;
 }

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import CreateClubForm from "./CreateClubForm";
-import CreateClub from './CreateClub';
+import CreateClub from "./CreateClub";
 
 const CreateClubPage = () => {
   const [clubs, setClubs] = useState([]);

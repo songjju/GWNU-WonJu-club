@@ -1,130 +1,130 @@
 /*TopScreen.css*/
 .navbar {
-    border-bottom: 1px solid #dee2e6;
-    position: fixed;
-    width: 100%;
-    top: 0;
-    z-index: 1000;
-    padding: 0 20px;
-    transition: background-color 0.3s ease, color 0.3s ease;
+  border-bottom: 1px solid #dee2e6;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+  padding: 0 20px;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .navbar.mainPage {
-    background-color: transparent;
+  background-color: transparent;
 }
 
 .navbar.scrolled {
-    background-color: #ffffff;
+  background-color: #ffffff;
 }
 
 .navbar.otherPage {
-    background-color: #ffffff;
+  background-color: #ffffff;
 }
 
 .navbar-brand {
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    margin-right: 10px;
-    color: #ffffff;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+  color: #ffffff;
 }
 
 .navbar.scrolled .navbar-brand,
 .navbar.otherPage .navbar-brand {
-    color: #000000;
+  color: #000000;
 }
 
 .navbar-brand img {
-    margin-right: 10px;
-    width: 50px;
-    height: 50px;
+  margin-right: 10px;
+  width: 50px;
+  height: 50px;
 }
 
 .navbar-nav {
-    margin-left: auto;
+  margin-left: auto;
 }
 
 .nav-link {
-    margin-left: 20px;
-    color: #ffffff;
+  margin-left: 20px;
+  color: #ffffff;
 }
 
 .navbar.scrolled .nav-link,
 .navbar.otherPage .nav-link {
-    color: #000000;
+  color: #000000;
 }
 
 .topScreenContainer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .navLinks {
-    display: flex;
-    gap: 30px;
-    align-items: center;
-    flex: 1;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  flex: 1;
 }
 
 .navAuthLinks {
-    display: flex;
-    margin-left: 10px;
+  display: flex;
+  margin-left: 10px;
 }
 
 .navLink {
-    color: #ffffff;
-    text-decoration: none;
+  color: #ffffff;
+  text-decoration: none;
 }
 
 .navbar.scrolled .navLink,
 .navbar.otherPage .navLink {
-    color: #000000;
+  color: #000000;
 }
 
 .navLink:hover {
-    transform: scale(1.05);
-    color: #90CAF9;
+  transform: scale(1.05);
+  color: #90caf9;
 }
 
 .navAuthLinks .navLink {
-    font-size: 0.9rem;
+  font-size: 0.9rem;
 }
 
 .navAuthLinks .separator {
-    margin: 0 5px;
-    font-size: 0.9rem;
-    color: #ffffff;
+  margin: 0 5px;
+  font-size: 0.9rem;
+  color: #ffffff;
 }
 
 .navbar.scrolled .navAuthLinks .separator,
 .navbar.otherPage .navAuthLinks .separator {
-    color: #000000;
+  color: #000000;
 }
 
 .clickable {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .navbar-brand:hover span {
-    color: #ffffff; /* Hover 시 색상 변경을 방지 */
+  color: #ffffff; /* Hover 시 색상 변경을 방지 */
 }
 
 .navbar.scrolled .navbar-brand:hover span,
 .navbar.otherPage .navbar-brand:hover span {
-    color: #000000; /* 스크롤 된 상태에서 Hover 시 색상 변경을 방지 */
+  color: #000000; /* 스크롤 된 상태에서 Hover 시 색상 변경을 방지 */
 }
 
 .navbar.otherPage .navLink:hover {
-    color: #90CAF9; /* 메인 페이지가 아닐 때의 상단바 호버 색상 변경 */
+  color: #90caf9; /* 메인 페이지가 아닐 때의 상단바 호버 색상 변경 */
 }
 
 /* 추가된 CSS 클래스 */
 .no-hover {
-    color: #ffffff !important; /* 클릭 후에도 텍스트 색상을 흰색으로 유지 */
+  color: #ffffff !important; /* 클릭 후에도 텍스트 색상을 흰색으로 유지 */
 }
 
 .navbar.mainPage .navbar-brand:active span,
 .navbar.mainPage .navbar-brand:focus span {
-    color: #ffffff !important; /* 클릭하거나 포커스된 상태에서도 흰색으로 유지 */
+  color: #ffffff !important; /* 클릭하거나 포커스된 상태에서도 흰색으로 유지 */
 }

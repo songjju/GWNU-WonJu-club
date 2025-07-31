@@ -1,5 +1,4 @@
 .ClubManagementPage {
-
   display: flex;
   width: 1800px;
   flex-direction: column;
@@ -59,7 +58,6 @@
 }
 .member-item,
 .member-management-item {
-
   border-bottom: 1px solid #eee;
   flex-grow: 1;
   max-width: 200px;
@@ -240,7 +238,7 @@
   gap: 10px;
   justify-content: center;
   margin-bottom: 20px;
-} 
+}
 
 .member-management-section h3 {
   margin-bottom: 10px;
@@ -301,215 +299,219 @@
   background-color: #cc0000; /* 호버 시 배경색 변경 */
 }
 
-  .club-info{
-    font-weight: bold;
-  }
+.club-info {
+  font-weight: bold;
+}
 
-  .section {
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .club-info {
-    text-align: center;
-  }
-  
-  .club-info h2 {
-    margin-bottom: 20px;
-  }
-  
-  .logo-container {
-    margin-bottom: 20px;
-  }
-  
-  .logo-container img {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 2px solid #ccc;
-  }
-  
-  .member-container {
-    margin-bottom: 20px;
-  }
-  
-  .member-container h3 {
-    margin-bottom: 10px;
-  }
-  
-  .member-list {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-  }
-  
-  .member-item {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    flex-grow: 1;
-    max-width: 200px;
-    margin-right: 20px;
-    margin-bottom: 10px;
-  }
-  
-  .member-item span {
-    display: block;
-  }
-  
-  .member-item span:first-child {
-    font-weight: bold;
-  }
-  
-  .applying-members {
-    margin-bottom: 20px;
-  }
-  
-  .applying-members-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-  }
-  
-  .applying-member {
-    background-color: #fff;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 200px;
-    text-align: center;
-  }
-  
-  .action-buttons {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 10px;
-  }
-  
-  .logo-photo-container {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-  
-  .logo-update, .photo-update {
-    flex: 1;
-    margin: 0 10px;
-  }
-  
-  .logo-drop-area, .photo-drop-area {
-    border: 2px dashed #ccc;
-    border-radius: 8px;
-    padding: 20px;
-    text-align: center;
-  }
-  
-  .logo-drop-area img, .photo-drop-area img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 50%;
-    margin-bottom: 10px;
-  }
-  
-  .logo-drop-area input, .photo-drop-area input {
-    display: none;
-  }
-  
-  .introduction-container {
-    text-align: left;
-  }
-  
-  .introduction-container textarea {
-    width: 100%;
-    height: 100px;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    resize: vertical;
-    margin-bottom: 10px;
-  }
-  
-  .error-message {
-    color: red;
-    margin-top: 10px;
-  }
-  
-  .club-selection {
-    text-align: center;
-  }
-  
-  .club-selection select {
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    margin-bottom: 10px;
-  }
-  
-  .club-selection button {
-    padding: 10px 20px;
-    border-radius: 4px;
-    border: none;
-    background-color: #007bff;
-    color: #fff;
-    cursor: pointer;
-  }
-  
-  .club-selection button:hover {
-    background-color: #0056b3;
-  }
-  
-  .image-selection-modal {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    max-width: 600px;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .image-selection-modal h2 {
-    margin-bottom: 20px;
-  }
-  
-  .image-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 20px;
-  }
-  
-  .image-item {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: transform 0.2s;
-  }
-  
-  .image-item:hover {
-    transform: scale(1.05);
-  }
-  
-  .image-selection-modal button {
-    padding: 10px 20px;
-    border-radius: 4px;
-    border: none;
-    background-color: #007bff;
-    color: #fff;
-    cursor: pointer;
-  }
-  
-  .image-selection-modal button:hover {
-    background-color: #0056b3;
-  }
+.section {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.club-info {
+  text-align: center;
+}
+
+.club-info h2 {
+  margin-bottom: 20px;
+}
+
+.logo-container {
+  margin-bottom: 20px;
+}
+
+.logo-container img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+}
+
+.member-container {
+  margin-bottom: 20px;
+}
+
+.member-container h3 {
+  margin-bottom: 10px;
+}
+
+.member-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.member-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  flex-grow: 1;
+  max-width: 200px;
+  margin-right: 20px;
+  margin-bottom: 10px;
+}
+
+.member-item span {
+  display: block;
+}
+
+.member-item span:first-child {
+  font-weight: bold;
+}
+
+.applying-members {
+  margin-bottom: 20px;
+}
+
+.applying-members-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.applying-member {
+  background-color: #fff;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 200px;
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+
+.logo-photo-container {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.logo-update,
+.photo-update {
+  flex: 1;
+  margin: 0 10px;
+}
+
+.logo-drop-area,
+.photo-drop-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.logo-drop-area img,
+.photo-drop-area img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.logo-drop-area input,
+.photo-drop-area input {
+  display: none;
+}
+
+.introduction-container {
+  text-align: left;
+}
+
+.introduction-container textarea {
+  width: 100%;
+  height: 100px;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  resize: vertical;
+  margin-bottom: 10px;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+}
+
+.club-selection {
+  text-align: center;
+}
+
+.club-selection select {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+.club-selection button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  border: none;
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.club-selection button:hover {
+  background-color: #0056b3;
+}
+
+.image-selection-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  max-width: 600px;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.image-selection-modal h2 {
+  margin-bottom: 20px;
+}
+
+.image-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.image-item {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: transform 0.2s;
+}
+
+.image-item:hover {
+  transform: scale(1.05);
+}
+
+.image-selection-modal button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  border: none;
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.image-selection-modal button:hover {
+  background-color: #0056b3;
+}

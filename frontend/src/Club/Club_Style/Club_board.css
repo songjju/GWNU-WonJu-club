@@ -1,52 +1,51 @@
 .bulletin-board-container {
-    margin-top: 20px;
+  margin-top: 20px;
+}
+.clubpost-button-container {
+  display: flex;
+  gap: 5px;
+  position: relative;
+  justify-content: flex-start;
+}
+.create-post-button {
+  position: absolute;
+  bottom: 10px;
+  /* 아래에서 10px */
+  right: 30px;
+  /* 오른쪽에서 10px */
 
-}
-.clubpost-button-container{
-    display:flex;
-    gap:5px;
-    position: relative;
-    justify-content: flex-start;
-}
-.create-post-button{
-        position: absolute;
-            bottom: 10px;
-            /* 아래에서 10px */
-            right: 30px;
-            /* 오른쪽에서 10px */
-        
-            background-color: #ffffff;
-            color: rgb(0, 0, 0);
-            border-radius: 5px;
-            cursor: pointer;
+  background-color: #ffffff;
+  color: rgb(0, 0, 0);
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-.board-box{
-    margin-left: 10%;
-    width: 80%;
-    margin-top: 20px;
+.board-box {
+  margin-left: 10%;
+  width: 80%;
+  margin-top: 20px;
 }
 .posts {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 }
 
 .post {
-    border: 1px solid #ddd;
-    padding: 10px;
+  border: 1px solid #ddd;
+  padding: 10px;
 }
 
 .post-title {
-    font-size: 18px;
-    font-weight: bold;
+  font-size: 18px;
+  font-weight: bold;
 }
 
 .post-content {
-    margin-top: 10px;
+  margin-top: 10px;
 }
 
 .post-author {
-    margin-top: 10px;
-    color: #666;
+  margin-top: 10px;
+  color: #666;
 }

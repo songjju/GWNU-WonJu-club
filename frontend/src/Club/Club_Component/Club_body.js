@@ -5,9 +5,6 @@ import "../Club_Style/Club_body.css";
 import ProfileCard from "../Club_Card/club_profile_card";
 
 const ClubBody = ({ clubData, clubName }) => {
- 
-  
-  
   const navigate = useNavigate();
 
   if (!clubData || !clubData.club_data) {
@@ -70,7 +67,7 @@ const ClubBody = ({ clubData, clubName }) => {
           ))}
         </div>
       </div>
- <div className="club-posts-container">
+      <div className="club-posts-container">
         <div style={sectionHeaderStyle}>
           <h3 className="list2">사진첩</h3>
           <button onClick={() => handleClick("album")} style={buttonStyle}>
@@ -98,8 +95,6 @@ const ClubBody = ({ clubData, clubName }) => {
             </div>
           ))}
         </div>
-
-   
       </div>
 
       <div className="club-posts-container">
@@ -211,8 +206,6 @@ const ClubBody = ({ clubData, clubName }) => {
           )}
         </div>
       </div>
-
-     
     </div>
   );
 };

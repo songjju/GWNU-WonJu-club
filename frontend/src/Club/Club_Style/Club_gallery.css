@@ -1,81 +1,81 @@
- .gallery-box{
-    margin-top: 20px;
-    margin-left: 10%;
-    width:80%
-  }
-  .gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-  }
-  
-  .gallery-card {
-    text-decoration: none;
-    color: inherit;
-    text-align: center;
-  }
-  
-  .gallery-card img {
-    width: 100%;
-    height: auto;
-  }
-  
-  .gallery-title {
-    margin-top: 10px;
-    font-size: 16px;
-  }
-  
-  .gallery-recommend {
-    margin-top: 5px;
-    font-size: 14px;
-  }
-  
-  .pagination {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-  }
-  
-  .pagination button {
-    margin: 0 5px;
-    padding: 5px 10px;
-    border: 1px solid #ccc;
-    background-color: #fff;
-    cursor: pointer;
-  }
-  
-  .pagination button:hover {
-    background-color: #f0f0f0;
-  }
-  
-  .gallery-search-container {
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-  }
-  .create-photo-button{
-    margin-right: 30px;
-  }
-  
-  .gallery-search-container select,
-  .gallery-search-container input[type="text"] {
-    margin-right: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  .gallery-search-container select {
-    width: 120px;
-  }
-  
-  .gallery-search-container input[type="text"] {
-    flex: 1;
-    max-width: 300px;
-  }
-  .album-head-container{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
+.gallery-box {
+  margin-top: 20px;
+  margin-left: 10%;
+  width: 80%;
+}
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.gallery-card {
+  text-decoration: none;
+  color: inherit;
+  text-align: center;
+}
+
+.gallery-card img {
+  width: 100%;
+  height: auto;
+}
+
+.gallery-title {
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+.gallery-recommend {
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.pagination button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.pagination button:hover {
+  background-color: #f0f0f0;
+}
+
+.gallery-search-container {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+.create-photo-button {
+  margin-right: 30px;
+}
+
+.gallery-search-container select,
+.gallery-search-container input[type="text"] {
+  margin-right: 10px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.gallery-search-container select {
+  width: 120px;
+}
+
+.gallery-search-container input[type="text"] {
+  flex: 1;
+  max-width: 300px;
+}
+.album-head-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}

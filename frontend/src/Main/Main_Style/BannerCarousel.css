@@ -7,9 +7,10 @@
   padding: 0;
   overflow: hidden;
   align-items: center;
-  position: absolute; top: 0; left: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
-
 
 /* 캐러셀 이미지 스타일 */
 .carousel-image {
@@ -18,6 +19,4 @@
   object-fit: cover;
   overflow: hidden;
   z-index: -1; /* 이미지를 다른 요소들 뒤에 위치시킵니다. */
-  
 }
-

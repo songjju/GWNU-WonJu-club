@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const ClubManagementPage = ({ clubName }) => {
   const navigate = useNavigate();
   const [clubInfo, setClubInfo] = useState({});
   const [pendingMembers, setPendingMembers] = useState([]);
-  const [newLogo, setNewLogo] = useState('');
-  const [newBackground, setNewBackground] = useState('');
-  const [newDescription, setNewDescription] = useState('');
+  const [newLogo, setNewLogo] = useState("");
+  const [newBackground, setNewBackground] = useState("");
+  const [newDescription, setNewDescription] = useState("");
 
   useEffect(() => {
     axios
@@ -30,9 +30,13 @@ const ClubManagementPage = ({ clubName }) => {
 
   const approveMember = (memberId) => {
     axios
-      .post(`/club_management/club/${clubName}/member/${memberId}/`, { memberId })
+      .post(`/club_management/club/${clubName}/member/${memberId}/`, {
+        memberId,
+      })
       .then(() => {
-        setPendingMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
+        setPendingMembers((prevMembers) =>
+          prevMembers.filter((member) => member.id !== memberId)
+        );
         alert("회원 승인이 완료되었습니다.");
       })
       .catch((error) => {
@@ -47,7 +51,7 @@ const ClubManagementPage = ({ clubName }) => {
       .post(`/club_management/club/${clubName}/update_info`, {
         logo: newLogo,
         background: newBackground,
-        description: newDescription
+        description: newDescription,
       })
       .then(() => {
         alert("동아리 정보가 업데이트 되었습니다.");
@@ -76,15 +80,27 @@ const ClubManagementPage = ({ clubName }) => {
       <form onSubmit={updateClubInfo}>
         <label>
           로고:
-          <input type="text" value={newLogo} onChange={(e) => setNewLogo(e.target.value)} />
+          <input
+            type="text"
+            value={newLogo}
+            onChange={(e) => setNewLogo(e.target.value)}
+          />
         </label>
         <label>
           배경:
-          <input type="text" value={newBackground} onChange={(e) => setNewBackground(e.target.value)} />
+          <input
+            type="text"
+            value={newBackground}
+            onChange={(e) => setNewBackground(e.target.value)}
+          />
         </label>
         <label>
           설명:
-          <input type="text" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} />
+          <input
+            type="text"
+            value={newDescription}
+            onChange={(e) => setNewDescription(e.target.value)}
+          />
         </label>
         <button type="submit">업데이트</button>
       </form>

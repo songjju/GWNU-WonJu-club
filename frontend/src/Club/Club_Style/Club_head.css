@@ -75,9 +75,8 @@
   text-decoration: underline;
 } */
 
-
 /* 관호 */
-.club-head-text{
+.club-head-text {
   font-weight: bold;
 }
 
@@ -94,12 +93,12 @@
 
 .club-header-nav li:hover {
   transform: scale(1.05);
-  color: #90CAF9;
+  color: #90caf9;
 }
 
-.club-header-nav.active{
-background-color: #90CAF9;
-border-radius: 30px;
+.club-header-nav.active {
+  background-color: #90caf9;
+  border-radius: 30px;
 }
 .club-header img {
   margin-right: 20px;
@@ -128,12 +127,11 @@ border-radius: 30px;
 .club-header nav ul li {
   margin-right: 30px;
   padding: 10px;
-  font-family: 'Noto Sans KR', sans-serif;
+  font-family: "Noto Sans KR", sans-serif;
   font-size: 20px;
   cursor: pointer;
   transition: background-color 0.3s, color 0.3s;
 }
-
 
 .manage {
   margin-left: auto;

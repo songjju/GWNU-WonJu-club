@@ -12,7 +12,7 @@
 .signup-title {
   text-align: center;
   margin-bottom: 2rem;
-  color: #42A5F5; /* 변경된 색상 */
+  color: #42a5f5; /* 변경된 색상 */
 }
 
 .signup-form-group {
@@ -28,21 +28,21 @@
 .signup-form-control {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #42A5F5; /* 변경된 색상 */
+  border: 1px solid #42a5f5; /* 변경된 색상 */
   border-radius: 4px;
   box-sizing: border-box;
-  background-color: #E3F2FD; /* 변경된 색상 */
+  background-color: #e3f2fd; /* 변경된 색상 */
 }
 
 .signup-form-control:focus {
-  border-color: #64B5F6; /* 변경된 색상 */
+  border-color: #64b5f6; /* 변경된 색상 */
   outline: none;
 }
 
 .signup-btn {
   width: 100%;
   padding: 0.75rem;
-  background-color: #42A5F5; /* 변경된 색상 */
+  background-color: #42a5f5; /* 변경된 색상 */
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -51,7 +51,7 @@
 }
 
 .signup-btn:hover {
-  background-color: #64B5F6; /* 변경된 색상 */
+  background-color: #64b5f6; /* 변경된 색상 */
 }
 
 .signup-spinner {

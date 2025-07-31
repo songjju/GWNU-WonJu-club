@@ -1,5 +1,5 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
+import React from "react";
+import { render, screen } from "@testing-library/react";
 
 const ErrorMessage = ({ message, onRetry }) => (
   <div data-testid="error-message" className="error-message">
@@ -12,24 +12,24 @@ const ErrorMessage = ({ message, onRetry }) => (
   </div>
 );
 
-describe('ErrorMessage Component', () => {
-  test('ErrorMessage 컴포넌트가 정상적으로 렌더링된다', () => {
+describe("ErrorMessage Component", () => {
+  test("ErrorMessage 컴포넌트가 정상적으로 렌더링된다", () => {
     render(<ErrorMessage message="오류가 발생했습니다." />);
-    
-    expect(screen.getByTestId('error-message')).toBeInTheDocument();
-    expect(screen.getByText('오류가 발생했습니다.')).toBeInTheDocument();
+
+    expect(screen.getByTestId("error-message")).toBeInTheDocument();
+    expect(screen.getByText("오류가 발생했습니다.")).toBeInTheDocument();
   });
 
-  test('재시도 버튼이 있을 때 표시된다', () => {
+  test("재시도 버튼이 있을 때 표시된다", () => {
     const mockRetry = jest.fn();
     render(<ErrorMessage message="오류 발생" onRetry={mockRetry} />);
-    
-    expect(screen.getByTestId('retry-button')).toBeInTheDocument();
+
+    expect(screen.getByTestId("retry-button")).toBeInTheDocument();
   });
 
-  test('재시도 버튼이 없을 때 표시되지 않는다', () => {
+  test("재시도 버튼이 없을 때 표시되지 않는다", () => {
     render(<ErrorMessage message="오류 발생" />);
-    
-    expect(screen.queryByTestId('retry-button')).not.toBeInTheDocument();
+
+    expect(screen.queryByTestId("retry-button")).not.toBeInTheDocument();
   });
 });

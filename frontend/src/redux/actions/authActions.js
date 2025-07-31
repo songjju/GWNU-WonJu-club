@@ -1,13 +1,13 @@
-import { LOGIN_SUCCESS, LOGOUT } from '../actionTypes';
+import { LOGIN_SUCCESS, LOGOUT } from "../actionTypes";
 
 export const loginSuccess = (user) => ({
   type: LOGIN_SUCCESS,
-  payload: user
+  payload: user,
 });
 
 export function logout() {
-  return async dispatch => {
+  return async (dispatch) => {
     // perform async operations
-    dispatch({ type: 'LOGOUT' });
+    dispatch({ type: "LOGOUT" });
   };
 }

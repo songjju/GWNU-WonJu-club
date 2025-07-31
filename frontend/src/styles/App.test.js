@@ -1,19 +1,19 @@
-describe('App Styles', () => {
-  test('CSS 파일이 정상적으로 로드된다', () => {
+describe("App Styles", () => {
+  test("CSS 파일이 정상적으로 로드된다", () => {
     expect(() => {
-      require('../App.css');
+      require("../App.css");
     }).not.toThrow();
   });
 
-  test('index.css 파일이 정상적으로 로드된다', () => {
+  test("index.css 파일이 정상적으로 로드된다", () => {
     expect(() => {
-      require('../index.css');
+      require("../index.css");
     }).not.toThrow();
   });
 
-  test('global.css 파일이 정상적으로 로드된다', () => {
+  test("global.css 파일이 정상적으로 로드된다", () => {
     expect(() => {
-      require('../global.css');
+      require("../global.css");
     }).not.toThrow();
   });
 });

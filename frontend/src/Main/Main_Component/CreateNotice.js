@@ -1,40 +1,40 @@
-import React, { useState } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import '../Main_Style/CreateNotice.css';
-import { Button, Input, Form, FormGroup, Label } from 'reactstrap';
-import { useNavigate } from 'react-router-dom';
-import API_BASE_URL from '../../config/apiConfig';
+import React, { useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "../Main_Style/CreateNotice.css";
+import { Button, Input, Form, FormGroup, Label } from "reactstrap";
+import { useNavigate } from "react-router-dom";
+import API_BASE_URL from "../../config/apiConfig";
 
 const CreateNotice = () => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const navigate = useNavigate();
 
   const handleCancel = () => {
-    navigate('/');
+    navigate("/");
   };
 
   const handleCreate = () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     fetch(`${API_BASE_URL}/club_board/notice/`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Token ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Token ${token}`,
       },
       body: JSON.stringify({
         title: title,
         content: content,
       }),
     })
-      .then(response => {
+      .then((response) => {
         if (response.ok) {
-          navigate('/');
+          navigate("/");
         } else {
-          alert('Failed to create notice');
+          alert("Failed to create notice");
         }
       })
-      .catch(error => console.error('Error:', error));
+      .catch((error) => console.error("Error:", error));
   };
 
   return (
@@ -63,8 +63,12 @@ const CreateNotice = () => {
           />
         </FormGroup>
         <div className="buttons">
-          <Button color="secondary" onClick={handleCancel}>취소</Button>
-          <Button color="primary" onClick={handleCreate}>작성</Button>
+          <Button color="secondary" onClick={handleCancel}>
+            취소
+          </Button>
+          <Button color="primary" onClick={handleCreate}>
+            작성
+          </Button>
         </div>
       </Form>
     </div>

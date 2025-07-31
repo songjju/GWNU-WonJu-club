@@ -1,6 +1,8 @@
 /*EventCard.css*/
 .event-card {
-  width: calc(50% - 25px); /* 각 카드의 너비를 반으로 조정하고, 각 카드 사이에 25px 여백을 추가합니다. */
+  width: calc(
+    50% - 25px
+  ); /* 각 카드의 너비를 반으로 조정하고, 각 카드 사이에 25px 여백을 추가합니다. */
   height: auto;
   border: none;
   margin-right: 25px; /* 각 카드 사이의 오른쪽 여백을 추가합니다. */

@@ -1,8 +1,8 @@
 // src/components/BannerCarousel.js
-import React from 'react';
-import { Carousel } from 'react-bootstrap';
-import '../Main_Style/BannerCarousel.css';
-import '../Main_Style/Responsive.css';
+import React from "react";
+import { Carousel } from "react-bootstrap";
+import "../Main_Style/BannerCarousel.css";
+import "../Main_Style/Responsive.css";
 
 const BannerCarousel = () => (
   <div className="carousel-container">
