@@ -12,33 +12,27 @@ env:
   IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
 
 jobs:
-  # 🔥 변경 파일 감지 (모든 Job의 기준) - 타임아웃 수정
+  # 🔥 변경 파일 감지 (수정된 안전한 버전)
   changes:
     runs-on: ubuntu-latest
-    timeout-minutes: 8  # 2분 → 8분으로 증가
+    timeout-minutes: 8
     outputs:
       backend: ${{ steps.changes.outputs.backend }}
       frontend: ${{ steps.changes.outputs.frontend }}
       docker: ${{ steps.changes.outputs.docker }}
       docs: ${{ steps.changes.outputs.docs }}
     steps:
-      - name: Checkout code with retry
-        uses: nick-invision/retry@v2
+      - name: Checkout code (safe method)
+        uses: actions/checkout@v4
         with:
-          timeout_minutes: 5
-          max_attempts: 3
-          retry_wait_seconds: 30
-          command: |
-            # 기본 체크아웃 시도
-            git clone --depth=10 https://github.com/${{ github.repository }}.git . || exit 1
-            
-            # PR의 경우 베이스 브랜치도 가져오기
-            if [ "${{ github.event_name }}" = "pull_request" ]; then
-              git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }} --depth=10
-            fi
-            
-            # 현재 커밋으로 체크아웃
-            git checkout ${{ github.sha }}
+          fetch-depth: 5  # 충분한 비교를 위한 히스토리
+        timeout-minutes: 5
+        
+      - name: Fetch base branch for PR comparison
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }} --depth=5
+        timeout-minutes: 2
 
       - name: Detect changes
         uses: dorny/paths-filter@v2
