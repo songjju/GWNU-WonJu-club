@@ -368,17 +368,27 @@ jobs:
 
       - name: 🔑 Setup Kubernetes config
         run: |
-          # Minikube context 확인 및 사용
+          # 현재 context 정보 출력
           echo "🔍 Current kubectl context:"
-          kubectl config current-context || echo "No current context set"
+          CURRENT_CONTEXT=$(kubectl config current-context)
+          echo "Context: ${CURRENT_CONTEXT}"
           
-          # Minikube context로 전환
-          kubectl config use-context minikube
-          echo "✅ Using Minikube context"
+          # 클러스터 정보 확인
+          echo "🔗 Cluster information:"
+          kubectl cluster-info --request-timeout=10s
           
-          # 클러스터 연결 확인
-          kubectl cluster-info
+          # 노드 상태 확인
+          echo "🖥️ Cluster nodes:"
           kubectl get nodes
+          
+          # context가 "gitops"인 경우 이를 그대로 사용
+          if [[ "${CURRENT_CONTEXT}" == "gitops" ]]; then
+            echo "✅ Using gitops context (your Kubernetes cluster)"
+          elif [[ "${CURRENT_CONTEXT}" == "minikube" ]]; then
+            echo "✅ Using minikube context"
+          else
+            echo "✅ Using current context: ${CURRENT_CONTEXT}"
+          fi
           
           echo "🎯 Kubernetes cluster is ready for deployment"
 
