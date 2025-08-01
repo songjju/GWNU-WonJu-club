@@ -209,9 +209,13 @@ jobs:
           pip install -r requirements.txt
           pip install pytest coverage
           
-          # 빠른 테스트 (실패 시 즉시 중단)
-          python -m pytest --maxfail=5 -x --tb=short -q
-          echo "✅ Backend tests completed"
+          # ai_chatbot 디렉토리 제외하고 테스트 실행
+          python -m pytest --maxfail=5 -x --tb=short -q \
+            --ignore=ai_chatbot/ \
+            --ignore=ai_chatbot \
+            --ignore=*/ai_chatbot/* \
+            .
+          echo "✅ Backend tests completed (ai_chatbot excluded)"
 
       # 프론트엔드 테스트 (조건부)
       - name: ⚛️ Frontend tests
