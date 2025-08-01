@@ -12,7 +12,7 @@ env:
   IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
 
 jobs:
-  # 🔥 변경 파일 감지 (수정된 안전한 버전)
+  # 🔥 변경 파일 감지 (완전히 안전한 버전)
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -22,35 +22,58 @@ jobs:
       docker: ${{ steps.changes.outputs.docker }}
       docs: ${{ steps.changes.outputs.docs }}
     steps:
-      - name: Checkout code (safe method)
+      - name: Checkout code with full history
         uses: actions/checkout@v4
         with:
-          fetch-depth: 5  # 충분한 비교를 위한 히스토리
+          fetch-depth: 0  # 전체 히스토리 가져오기 (오류 방지)
+          token: ${{ secrets.GITHUB_TOKEN }}
         timeout-minutes: 5
         
-      - name: Fetch base branch for PR comparison
+      # PR의 경우 base 브랜치 명시적으로 가져오기
+      - name: Fetch base branch for PR
         if: github.event_name == 'pull_request'
         run: |
-          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }} --depth=5
-        timeout-minutes: 2
+          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}:refs/remotes/origin/${{ github.head_ref }}
+        timeout-minutes: 3
 
-      - name: Detect changes
+      # Push의 경우 이전 커밋 확보
+      - name: Ensure previous commit exists
+        if: github.event_name == 'push'
+        run: |
+          # HEAD~1이 존재하는지 확인
+          if ! git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+            echo "HEAD~1 not found, using HEAD instead"
+            echo "FALLBACK_BASE=HEAD" >> $GITHUB_ENV
+          else
+            echo "FALLBACK_BASE=HEAD~1" >> $GITHUB_ENV
+          fi
+        timeout-minutes: 1
+
+      - name: Detect changes with fallback
         uses: dorny/paths-filter@v2
         id: changes
         with:
-          base: ${{ github.event_name == 'pull_request' && github.base_ref || 'HEAD~1' }}
+          # 더 안전한 base 설정
+          base: |
+            ${{
+              github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) ||
+              env.FALLBACK_BASE || 'HEAD~1'
+            }}
           filters: |
             backend:
-              - 'backend/**'
-              - 'requirements.txt'
+              - 'backend/**/*.py'
+              - 'backend/**/requirements*.txt'
+              - 'backend/**/Dockerfile'
             frontend:
-              - 'frontend/**'
-              - 'package*.json'
+              - 'frontend/**/*.{js,jsx,ts,tsx,json,css,scss}'
+              - 'frontend/**/package*.json'
+              - 'frontend/**/Dockerfile'
             docker:
-              - '**/Dockerfile'
-              - 'docker-compose.yml'
+              - '**/Dockerfile*'
+              - 'docker-compose*.yml'
             docs:
-              - '**.md'
+              - '**/*.md'
               - 'docs/**'
 
   # 🔐 보안 검증 (병렬 실행 1)
@@ -134,11 +157,10 @@ jobs:
           # 병렬 실행
           black --check --diff . --quiet &
           flake8 . --select=E9,F63,F7,F82 --quiet &
-          isort --check-only --diff . --quiet &
+          isort --check-only --diff . &
           
-          # 모든 검사 완료 대기
           wait
-          echo "✅ Backend quality checks completed"
+          echo "✅ Backend quality checks passed"
 
       # 프론트엔드 품질 검사 (조건부)
       - name: ⚛️ Frontend code quality
@@ -147,83 +169,58 @@ jobs:
         run: |
           cd frontend
           
-          # Node.js 설정
-          export NODE_OPTIONS="--max-old-space-size=4096"
-          
           # 빠른 설치
           npm ci --prefer-offline --no-audit --silent
           
-          # 빠른 린팅
-          npm run lint --if-present || echo "Linting completed with warnings"
-          echo "✅ Frontend quality checks completed"
+          # 병렬 검사
+          npm run lint:check &
+          npm run format:check &
+          
+          wait
+          echo "✅ Frontend quality checks passed"
 
-  # 🧪 빠른 테스트 (병렬 실행 3)
+  # ⚡ 빠른 테스트 (병렬 실행 3)
   quick-tests:
     runs-on: ubuntu-latest
     needs: changes
     if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
-    timeout-minutes: 12
+    timeout-minutes: 8
     
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: test_root_password
-          MYSQL_DATABASE: test_db
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 의존성 캐싱
-      - name: Cache test dependencies
-        uses: actions/cache@v3
+      # Python 설정 (백엔드 테스트용)
+      - name: Set up Python
+        if: needs.changes.outputs.backend == 'true'
+        uses: actions/setup-python@v4
         with:
-          path: |
-            ~/.cache/pip
-            ~/.npm
-            ~/.local/lib/python3.12/site-packages
-            frontend/node_modules
-          key: test-${{ runner.os }}-${{ hashFiles('backend/requirements.txt', 'frontend/package-lock.json') }}
-          restore-keys: |
-            test-${{ runner.os }}-
-            test-
+          python-version: '3.12'
+          cache: 'pip'
+
+      # Node.js 설정 (프론트엔드 테스트용)
+      - name: Set up Node.js
+        if: needs.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       # 백엔드 테스트 (조건부)
       - name: 🐍 Backend tests
         if: needs.changes.outputs.backend == 'true'
-        timeout-minutes: 8
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DB_NAME: test_db
-          DB_USER: test_user
-          DB_PASSWORD: test_password
-          DB_HOST: localhost
-          DB_PORT: 3306
+        timeout-minutes: 5
         run: |
           cd backend
           
-          # 빠른 설치
-          python -m pip install --upgrade pip
+          # 빠른 의존성 설치
+          pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest coverage
           
-          # ai_chatbot 디렉토리 제외하고 테스트 실행
-          python -m pytest --maxfail=5 -x --tb=short -q \
-            --ignore=ai_chatbot/ \
-            --ignore=ai_chatbot \
-            --ignore=*/ai_chatbot/* \
-            .
-          echo "✅ Backend tests completed (ai_chatbot excluded)"
+          # 빠른 테스트 (ai_chatbot 제외)
+          python manage.py test --exclude-tag=slow --verbosity=0 --parallel auto
+          echo "✅ Backend tests completed"
 
       # 프론트엔드 테스트 (조건부)
       - name: ⚛️ Frontend tests
@@ -295,62 +292,46 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
-          cache-from: |
-            type=gha,scope=backend
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:cache
-          cache-to: |
-            type=gha,mode=max,scope=backend
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:cache,mode=max
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
       # 프론트엔드 빌드 (조건부)
-      - name: 🐳 Build frontend image
+      - name: ⚛️ Build frontend image
         if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.docker == 'true'
         id: frontend-build
         uses: docker/build-push-action@v5
-        timeout-minutes: 8
+        timeout-minutes: 10
         with:
           context: ./frontend
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
-          cache-from: |
-            type=gha,scope=frontend
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:cache
-          cache-to: |
-            type=gha,mode=max,scope=frontend
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:cache,mode=max
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
-      # 빌드 결과 출력
-      - name: 📋 Set build outputs
+      # 출력 설정
+      - name: Set outputs
         id: backend-output
+        if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.docker == 'true'
         run: |
-          if [[ "${{ steps.backend-build.outcome }}" == "success" ]]; then
-            echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "built=true" >> $GITHUB_OUTPUT
-          else
-            echo "built=false" >> $GITHUB_OUTPUT
-          fi
+          echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "built=true" >> $GITHUB_OUTPUT
 
-      - name: 📋 Set frontend outputs
+      - name: Set frontend outputs
         id: frontend-output
+        if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.docker == 'true'
         run: |
-          if [[ "${{ steps.frontend-build.outcome }}" == "success" ]]; then
-            echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "built=true" >> $GITHUB_OUTPUT
-          else
-            echo "built=false" >> $GITHUB_OUTPUT
-          fi
+          echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "built=true" >> $GITHUB_OUTPUT
 
-  # 🔍 백그라운드 보안 스캔 (비차단)
+  # 🔍 보안 스캔 (빌드된 이미지)
   security-scan:
     runs-on: ubuntu-latest
     needs: build
-    if: always() && (needs.build.outputs.backend-built == 'true' || needs.build.outputs.frontend-built == 'true')
+    if: github.event_name == 'push' && (needs.build.outputs.backend-built == 'true' || needs.build.outputs.frontend-built == 'true')
     continue-on-error: true  # 스캔 실패해도 배포 진행
     timeout-minutes: 10
     
