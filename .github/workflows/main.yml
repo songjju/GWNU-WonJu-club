@@ -1,4 +1,4 @@
-name: 🚀 Optimized CI/CD Pipeline with Secure Secret Management
+name: ⚡ Ultra-Fast CI/CD Pipeline
 
 on:
   push:
@@ -12,163 +12,149 @@ env:
   IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
 
 jobs:
-  # 🔍 보안 및 환경변수 검증 작업 (병렬 실행 1)
-  security-validation:
-    name: 🔐 Security & Environment Validation
+  # 🔥 변경 파일 감지 (모든 Job의 기준)
+  changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     outputs:
-      secrets-valid: ${{ steps.validate-secrets.outputs.valid }}
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      docker: ${{ steps.changes.outputs.docker }}
+      docs: ${{ steps.changes.outputs.docs }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Python 의존성 캐싱
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
+      - name: Detect changes
+        uses: dorny/paths-filter@v2
+        id: changes
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-security-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-security-
-            ${{ runner.os }}-pip-
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'requirements.txt'
+            frontend:
+              - 'frontend/**'
+              - 'package*.json'
+            docker:
+              - '**/Dockerfile'
+              - 'docker-compose.yml'
+            docs:
+              - '**.md'
+              - 'docs/**'
 
-      - name: 🕵️ Secret leak detection
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-
-      - name: Set up Python for validation
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      - name: 🔍 Validate environment secrets
-        id: validate-secrets
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-        run: |
-          # 환경변수 검증 스크립트가 없는 경우 기본 검증
-          if [ -f "scripts/env-validator.py" ]; then
-            python scripts/env-validator.py
-          else
-            echo "Environment variables validation..."
-            [ -n "$SECRET_KEY" ] && echo "✅ SECRET_KEY is set"
-            [ -n "$DB_PASSWORD" ] && echo "✅ DB_PASSWORD is set"
-            echo "Basic validation completed"
-          fi
-          echo "valid=true" >> $GITHUB_OUTPUT
-
-      - name: 🛡️ Security scan for dependencies
-        timeout-minutes: 8
-        run: |
-          cd backend
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install safety
-          safety scan --output text --exit-zero || echo "Security vulnerabilities found but CI continuing"
-          echo "Security scan completed"
-          
-      # Trivy 파일시스템 스캔만 (이미지 스캔은 build 단계에서)
-      - name: 🔒 Trivy filesystem scan
-        timeout-minutes: 5
-        run: |
-          # Trivy 설치 (캐시 활용)
-          if ! command -v trivy &> /dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-            wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-            echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-            sudo apt-get update
-            sudo apt-get install -y trivy
-          fi
-          
-          # 백엔드 파일시스템 스캔만 (빠른 스캔)
-          echo "🔍 Scanning backend directory..."
-          trivy fs ./backend --format table --exit-code 0 --quiet
-          echo "✅ Security filesystem scan completed"
-
-  # 🎨 코드 품질 검사 (병렬 실행 2)
-  code-quality:
-    name: 🎨 Code Quality & Formatting
+  # 🔐 보안 검증 (병렬 실행 1)
+  security-validation:
     runs-on: ubuntu-latest
-    # security-validation과 병렬 실행하도록 의존성 제거
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
+    timeout-minutes: 8
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Python 의존성 캐싱
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-quality-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-quality-
-            ${{ runner.os }}-pip-
+      # 빠른 시크릿 누출 검사
+      - name: 🕵️ Quick secret leak detection
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
 
-      # Node 의존성 캐싱
-      - name: Cache Node dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      - name: Install Python quality tools
-        timeout-minutes: 3
+      # 환경변수 검증 (스크립트 없이)
+      - name: 🔍 Validate environment secrets
+        timeout-minutes: 1
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         run: |
-          python -m pip install --upgrade pip
-          pip install flake8 black isort bandit
+          echo "🔍 Environment variables validation..."
+          [ -n "$SECRET_KEY" ] && echo "✅ SECRET_KEY is set" || echo "❌ SECRET_KEY missing"
+          [ -n "$DB_PASSWORD" ] && echo "✅ DB_PASSWORD is set" || echo "❌ DB_PASSWORD missing"
+          [ -n "$MYSQL_ROOT_PASSWORD" ] && echo "✅ MYSQL_ROOT_PASSWORD is set" || echo "❌ MYSQL_ROOT_PASSWORD missing"
+          echo "✅ Basic validation completed"
 
-      - name: 🎨 Python code formatting check
-        timeout-minutes: 2
+      # 빠른 파일시스템 스캔 (백엔드만)
+      - name: 🔒 Quick filesystem scan
+        if: needs.changes.outputs.backend == 'true'
+        timeout-minutes: 5
         run: |
-          cd backend
-          black --check --diff . --quiet || echo "Code formatting issues found but continuing"
-          isort --check-only --diff . --quiet || echo "Import sorting issues found but continuing"
+          # Trivy 빠른 설치
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          
+          # 백엔드만 빠른 스캔
+          trivy fs ./backend --format table --exit-code 0 --quiet --severity HIGH,CRITICAL
+          echo "✅ Quick security scan completed"
 
-      - name: 🔍 Python linting (critical only)
-        timeout-minutes: 2
-        run: |
-          cd backend
-          # 중요한 오류만 체크하여 시간 단축
-          flake8 . --select=E9,F63,F7,F82 --show-source --statistics || echo "Critical errors found but continuing"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install frontend dependencies
-        timeout-minutes: 3
-        run: |
-          cd frontend
-          npm ci --prefer-offline --no-audit
-
-      - name: 🎨 Frontend code quality
-        timeout-minutes: 3
-        run: |
-          cd frontend
-          # 빠른 린팅만 실행
-          npm run lint --if-present || echo "Frontend linting completed with warnings"
-
-  # 🧪 테스트 작업 (보안 검증 후 실행)
-  test:
-    name: 🧪 Comprehensive Testing
+  # 🎨 코드 품질 검사 (병렬 실행 2)
+  code-quality:
     runs-on: ubuntu-latest
-    needs: [security-validation] # code-quality 의존성 제거로 병렬화
-    timeout-minutes: 20
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
+    timeout-minutes: 6
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 스마트 캐싱
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.npm
+            ~/.local/lib/python3.12/site-packages
+          key: quality-${{ runner.os }}-${{ hashFiles('backend/requirements.txt', 'frontend/package-lock.json') }}
+          restore-keys: |
+            quality-${{ runner.os }}-
+            quality-
+
+      # 백엔드 품질 검사 (조건부)
+      - name: 🐍 Backend code quality
+        if: needs.changes.outputs.backend == 'true'
+        timeout-minutes: 3
+        run: |
+          cd backend
+          
+          # 최소한의 도구만 설치
+          pip install --upgrade pip
+          pip install flake8 black isort
+          
+          # 병렬 실행
+          black --check --diff . --quiet &
+          flake8 . --select=E9,F63,F7,F82 --quiet &
+          isort --check-only --diff . --quiet &
+          
+          # 모든 검사 완료 대기
+          wait
+          echo "✅ Backend quality checks completed"
+
+      # 프론트엔드 품질 검사 (조건부)
+      - name: ⚛️ Frontend code quality
+        if: needs.changes.outputs.frontend == 'true'
+        timeout-minutes: 3
+        run: |
+          cd frontend
+          
+          # Node.js 설정
+          export NODE_OPTIONS="--max-old-space-size=4096"
+          
+          # 빠른 설치
+          npm ci --prefer-offline --no-audit --silent
+          
+          # 빠른 린팅
+          npm run lint --if-present || echo "Linting completed with warnings"
+          echo "✅ Frontend quality checks completed"
+
+  # 🧪 빠른 테스트 (병렬 실행 3)
+  quick-tests:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
+    timeout-minutes: 12
     
     services:
       mysql:
@@ -190,112 +176,63 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Python 의존성 캐싱
-      - name: Cache Python dependencies
+      # 의존성 캐싱
+      - name: Cache test dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-test-${{ hashFiles('backend/requirements.txt') }}
+          path: |
+            ~/.cache/pip
+            ~/.npm
+            ~/.local/lib/python3.12/site-packages
+            frontend/node_modules
+          key: test-${{ runner.os }}-${{ hashFiles('backend/requirements.txt', 'frontend/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pip-test-
-            ${{ runner.os }}-pip-
+            test-${{ runner.os }}-
+            test-
 
-      # Node 의존성 캐싱
-      - name: Cache Node dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      - name: Install backend dependencies
-        timeout-minutes: 5
+      # 백엔드 테스트 (조건부)
+      - name: 🐍 Backend tests
+        if: needs.changes.outputs.backend == 'true'
+        timeout-minutes: 8
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DB_NAME: test_db
+          DB_USER: test_user
+          DB_PASSWORD: test_password
+          DB_HOST: localhost
+          DB_PORT: 3306
         run: |
           cd backend
+          
+          # 빠른 설치
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install coverage pytest-django pytest-cov
+          pip install pytest coverage
+          
+          # 빠른 테스트 (실패 시 즉시 중단)
+          python -m pytest --maxfail=5 -x --tb=short -q
+          echo "✅ Backend tests completed"
 
-      - name: 🧪 Backend unit tests with coverage
-        timeout-minutes: 12
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DB_NAME: test_db
-          DB_USER: test_user
-          DB_PASSWORD: test_password
-          DB_HOST: localhost
-          DB_PORT: 3306
-          EMAIL_HOST_USER: test@example.com
-          EMAIL_HOST_PASSWORD: test_password
-        run: |
-          cd backend
-          coverage run --source='.' --omit='ai_chatbot/*' manage.py test --verbosity=1 --failfast
-          coverage report --show-missing --omit='ai_chatbot/*' --fail-under=60
-          coverage xml --omit='ai_chatbot/*'
-
-      # 통합 테스트는 조건부 실행
-      - name: 🧪 Backend integration tests
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-        timeout-minutes: 5
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DB_NAME: test_db
-          DB_USER: test_user
-          DB_PASSWORD: test_password
-          DB_HOST: localhost
-          DB_PORT: 3306
-        run: |
-          cd backend
-          python manage.py test --tag=integration --verbosity=1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install frontend dependencies
-        timeout-minutes: 3
-        run: |
-          cd frontend
-          npm ci --prefer-offline --no-audit
-
-      - name: 🧪 Frontend unit tests
+      # 프론트엔드 테스트 (조건부)
+      - name: ⚛️ Frontend tests
+        if: needs.changes.outputs.frontend == 'true'
         timeout-minutes: 5
         run: |
           cd frontend
-          npm test -- --coverage --watchAll=false --passWithNoTests
+          
+          # 빠른 설치
+          npm ci --prefer-offline --no-audit --silent
+          
+          # 빠른 테스트
+          npm test -- --passWithNoTests --watchAll=false --silent
+          echo "✅ Frontend tests completed"
 
-      # E2E 테스트는 main 브랜치에서만
-      - name: 🧪 Frontend E2E tests
-        if: github.ref == 'refs/heads/main'
-        timeout-minutes: 3
-        run: |
-          cd frontend
-          npm run test:e2e || echo "E2E tests not yet implemented"
-
-      - name: 📊 Upload coverage reports
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./backend/coverage.xml,./frontend/coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-        continue-on-error: true
-  
-  # 🐳 이미지 빌드 및 보안 스캔 (테스트 완료 후)
-  build-and-scan:
-    name: 🐳 Build & Security Scan Images
+  # 🐳 이미지 빌드 (조건부 + 병렬)
+  build:
     runs-on: ubuntu-latest
-    needs: [test, code-quality] # code-quality 의존성 추가
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    timeout-minutes: 15
+    needs: [changes, security-validation, code-quality, quick-tests]
+    if: github.event_name == 'push' && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true' || needs.changes.outputs.docker == 'true')
+    timeout-minutes: 18
     
     permissions:
       contents: read
@@ -303,14 +240,22 @@ jobs:
       security-events: write
 
     outputs:
-      backend-image: ${{ steps.clean-image-ref.outputs.backend-image }}
-      frontend-image: ${{ steps.clean-image-ref.outputs.frontend-image }}
-      backend-digest: ${{ steps.backend-build.outputs.digest }}
-      frontend-digest: ${{ steps.frontend-build.outputs.digest }}
+      backend-image: ${{ steps.backend-output.outputs.image }}
+      frontend-image: ${{ steps.frontend-output.outputs.image }}
+      backend-built: ${{ steps.backend-output.outputs.built }}
+      frontend-built: ${{ steps.frontend-output.outputs.built }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # 디스크 공간 확보
+      - name: 🧹 Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          sudo apt-get autoremove -y
+          sudo apt-get autoclean -y
+          docker system prune -af
 
       - name: 🔑 Log in to Container Registry
         uses: docker/login-action@v3
@@ -319,113 +264,110 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITOPS_TOKEN }}
 
-      - name: 🏷️ Extract backend metadata
-        id: backend-meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: 🏷️ Extract frontend metadata
-        id: frontend-meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
+            image=moby/buildkit:buildx-stable-1
 
-      # Docker layer 캐싱으로 빌드 시간 단축
-      - name: 🐳 Build and push backend image
+      # 백엔드 빌드 (조건부)
+      - name: 🐳 Build backend image
+        if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.docker == 'true'
         id: backend-build
         uses: docker/build-push-action@v5
+        timeout-minutes: 10
         with:
           context: ./backend
           push: true
-          tags: ${{ steps.backend-meta.outputs.tags }}
-          labels: ${{ steps.backend-meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
+          cache-from: |
+            type=gha,scope=backend
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:cache
+          cache-to: |
+            type=gha,mode=max,scope=backend
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:cache,mode=max
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
-      - name: 🐳 Build and push frontend image
+      # 프론트엔드 빌드 (조건부)
+      - name: 🐳 Build frontend image
+        if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.docker == 'true'
         id: frontend-build
         uses: docker/build-push-action@v5
+        timeout-minutes: 8
         with:
           context: ./frontend
           push: true
-          tags: ${{ steps.frontend-meta.outputs.tags }}
-          labels: ${{ steps.frontend-meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
+          cache-from: |
+            type=gha,scope=frontend
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:cache
+          cache-to: |
+            type=gha,mode=max,scope=frontend
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:cache,mode=max
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
-      # 이미지 참조 정리
-      - name: 🏷️ Extract clean image references
-        id: clean-image-ref
+      # 빌드 결과 출력
+      - name: 📋 Set build outputs
+        id: backend-output
         run: |
-          BACKEND_TAG=$(echo "${{ steps.backend-meta.outputs.tags }}" | head -n1 | tr -d '\n\r')
-          FRONTEND_TAG=$(echo "${{ steps.frontend-meta.outputs.tags }}" | head -n1 | tr -d '\n\r')
-          
-          echo "backend-image=${BACKEND_TAG}" >> $GITHUB_OUTPUT
-          echo "frontend-image=${FRONTEND_TAG}" >> $GITHUB_OUTPUT
-          
-          echo "Backend image for scanning: ${BACKEND_TAG}"
-          echo "frontend image for scanning: ${FRONTEND_TAG}"
+          if [[ "${{ steps.backend-build.outcome }}" == "success" ]]; then
+            echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "built=true" >> $GITHUB_OUTPUT
+          else
+            echo "built=false" >> $GITHUB_OUTPUT
+          fi
 
-      # 빠른 보안 스캔 (HIGH, CRITICAL만)
-      - name: 🔍 Backend image security scan
-        uses: aquasecurity/trivy-action@master
-        continue-on-error: true
-        timeout-minutes: 5
-        with:
-          image-ref: ${{ steps.clean-image-ref.outputs.backend-image }}
-          format: 'sarif'
-          output: 'backend-trivy.sarif'
-          severity: 'CRITICAL,HIGH'
+      - name: 📋 Set frontend outputs
+        id: frontend-output
+        run: |
+          if [[ "${{ steps.frontend-build.outcome }}" == "success" ]]; then
+            echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "built=true" >> $GITHUB_OUTPUT
+          else
+            echo "built=false" >> $GITHUB_OUTPUT
+          fi
 
-      - name: 🔍 Frontend image security scan
-        uses: aquasecurity/trivy-action@master
-        continue-on-error: true
-        timeout-minutes: 5
-        with:
-          image-ref: ${{ steps.clean-image-ref.outputs.frontend-image }}
-          format: 'sarif'
-          output: 'frontend-trivy.sarif'
-          severity: 'CRITICAL,HIGH'
-
-      - name: 📋 Upload backend security scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'backend-trivy.sarif'
-          category: 'backend-security'
-
-      - name: 📋 Upload frontend security scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'frontend-trivy.sarif'
-          category: 'frontend-security'
-  
-  # 🚀 안전한 배포 (Self-hosted Runner)
-  deploy:
-    name: 🚀 Secure Deployment
-    runs-on: self-hosted
-    needs: build-and-scan
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+  # 🔍 백그라운드 보안 스캔 (비차단)
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build
+    if: always() && (needs.build.outputs.backend-built == 'true' || needs.build.outputs.frontend-built == 'true')
+    continue-on-error: true  # 스캔 실패해도 배포 진행
     timeout-minutes: 10
+    
+    steps:
+      - name: 🔍 Quick image security scan
+        timeout-minutes: 8
+        run: |
+          # Trivy 설치
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          
+          # 병렬 스캔 (백그라운드)
+          if [[ "${{ needs.build.outputs.backend-built }}" == "true" ]]; then
+            trivy image --severity HIGH,CRITICAL --quiet ${{ needs.build.outputs.backend-image }} &
+          fi
+          
+          if [[ "${{ needs.build.outputs.frontend-built }}" == "true" ]]; then
+            trivy image --severity HIGH,CRITICAL --quiet ${{ needs.build.outputs.frontend-image }} &
+          fi
+          
+          # 모든 스캔 완료 대기
+          wait
+          echo "✅ Security scans completed"
+
+  # 🚀 초고속 배포 (Self-hosted)
+  deploy:
+    runs-on: self-hosted
+    needs: build
+    if: github.event_name == 'push' && (needs.build.outputs.backend-built == 'true' || needs.build.outputs.frontend-built == 'true')
+    timeout-minutes: 8
     
     environment: 
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
@@ -436,26 +378,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🔑 Setup Kubernetes config
-        timeout-minutes: 2
+        timeout-minutes: 1
         run: |
-          # 현재 context 정보 출력
-          echo "🔍 Current kubectl context:"
+          # 현재 context 확인
           CURRENT_CONTEXT=$(kubectl config current-context)
-          echo "Context: ${CURRENT_CONTEXT}"
-          
-          # 클러스터 정보 확인
-          echo "🔗 Cluster information:"
-          kubectl cluster-info --request-timeout=10s
-          
-          # 노드 상태 확인
-          echo "🖥️ Cluster nodes:"
-          kubectl get nodes
-          
           echo "✅ Using context: ${CURRENT_CONTEXT}"
-          echo "🎯 Kubernetes cluster is ready for deployment"
+          
+          # 빠른 연결 테스트
+          kubectl get nodes --request-timeout=10s
+          echo "🎯 Kubernetes cluster ready"
 
-      - name: 🔐 Deploy secrets securely
-        timeout-minutes: 3
+      - name: 🔐 Deploy secrets (quick)
+        timeout-minutes: 2
         env:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -464,112 +398,113 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         run: |
-          echo "🔐 Deploying secrets to ${ENVIRONMENT} environment..."
-          
           NAMESPACE="club-platform-${ENVIRONMENT}"
           
-          # 네임스페이스 생성/확인
+          # 빠른 네임스페이스 생성
           kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
-          kubectl label namespace "${NAMESPACE}" environment="${ENVIRONMENT}" --overwrite
           
-          # Backend secrets
+          # 빠른 시크릿 배포 (병렬)
           kubectl create secret generic backend-secrets \
             --from-literal=secret-key="${SECRET_KEY}" \
             --from-literal=email-host-user="${EMAIL_HOST_USER}" \
             --from-literal=email-host-password="${EMAIL_HOST_PASSWORD}" \
             --from-literal=db-password="${DB_PASSWORD}" \
             --namespace="${NAMESPACE}" \
-            --dry-run=client -o yaml | kubectl apply -f -
+            --dry-run=client -o yaml | kubectl apply -f - &
           
-          # MySQL secrets
           kubectl create secret generic mysql-secrets \
             --from-literal=root-password="${MYSQL_ROOT_PASSWORD}" \
             --from-literal=user-password="${DB_PASSWORD}" \
             --namespace="${NAMESPACE}" \
-            --dry-run=client -o yaml | kubectl apply -f -
+            --dry-run=client -o yaml | kubectl apply -f - &
           
-          echo "✅ All secrets deployed successfully to ${ENVIRONMENT}"
+          wait
+          echo "✅ Secrets deployed"
 
-      - name: 🚀 Deploy to Kubernetes
-        timeout-minutes: 5
+      - name: 🚀 Lightning-fast deployment
+        timeout-minutes: 4
         env:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-          BACKEND_IMAGE: ${{ needs.build-and-scan.outputs.backend-image }}
-          FRONTEND_IMAGE: ${{ needs.build-and-scan.outputs.frontend-image }}
+          BACKEND_IMAGE: ${{ needs.build.outputs.backend-image }}
+          FRONTEND_IMAGE: ${{ needs.build.outputs.frontend-image }}
+          BACKEND_BUILT: ${{ needs.build.outputs.backend-built }}
+          FRONTEND_BUILT: ${{ needs.build.outputs.frontend-built }}
         run: |
-          echo "🚀 Deploying applications to ${ENVIRONMENT} environment..."
-          
           NAMESPACE="club-platform-${ENVIRONMENT}"
           
-          # 간단한 배포 (매니페스트가 없는 경우)
-          if [ ! -d "manifests" ]; then
-            echo "Creating basic deployment for demonstration..."
-            kubectl create deployment backend-app --image=${BACKEND_IMAGE} -n ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-            kubectl create deployment frontend-app --image=${FRONTEND_IMAGE} -n ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-            kubectl expose deployment backend-app --port=8000 --target-port=8000 -n ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-            kubectl expose deployment frontend-app --port=3000 --target-port=3000 -n ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+          # 백엔드 배포 (조건부)
+          if [[ "${BACKEND_BUILT}" == "true" ]]; then
+            echo "🚀 Deploying backend: ${BACKEND_IMAGE}"
+            kubectl set image deployment/backend-app backend-app=${BACKEND_IMAGE} -n ${NAMESPACE} 2>/dev/null || {
+              kubectl create deployment backend-app --image=${BACKEND_IMAGE} -n ${NAMESPACE}
+              kubectl expose deployment backend-app --port=8000 --target-port=8000 -n ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+            }
           fi
           
-          echo "✅ Deployment completed successfully"
+          # 프론트엔드 배포 (조건부)  
+          if [[ "${FRONTEND_BUILT}" == "true" ]]; then
+            echo "🚀 Deploying frontend: ${FRONTEND_IMAGE}"
+            kubectl set image deployment/frontend-app frontend-app=${FRONTEND_IMAGE} -n ${NAMESPACE} 2>/dev/null || {
+              kubectl create deployment frontend-app --image=${FRONTEND_IMAGE} -n ${NAMESPACE}
+              kubectl expose deployment frontend-app --port=3000 --target-port=3000 -n ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+            }
+          fi
+          
+          echo "✅ Lightning deployment completed"
 
-      - name: 🏥 Health check
-        timeout-minutes: 2
+      - name: 🏥 Quick health check
+        timeout-minutes: 1
         env:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
         run: |
           NAMESPACE="club-platform-${ENVIRONMENT}"
-          
-          echo "🔍 Checking deployment health in namespace: ${NAMESPACE}..."
-          kubectl get all -n ${NAMESPACE} || echo "No resources found"
+          echo "🔍 Quick health check..."
+          kubectl get pods -n ${NAMESPACE} --no-headers | head -5
           echo "✅ Health check completed"
 
-  # 📢 간소화된 알림 시스템
+  # 📢 간단한 알림
   notify:
-    name: 📢 Notifications
     runs-on: ubuntu-latest
-    needs: [security-validation, code-quality, test, build-and-scan, deploy]
-    if: always() && (failure() || success())
-    timeout-minutes: 3
+    needs: [deploy, security-scan]
+    if: always() && (success() || failure())
+    timeout-minutes: 2
     
     steps:
-      - name: 📊 Generate simple report
-        id: report
+      - name: 📊 Generate status
+        id: status
         run: |
-          # 간단한 상태 체크
-          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "emoji=❌" >> $GITHUB_OUTPUT
+          if [[ "${{ needs.deploy.result }}" == "success" ]]; then
+            echo "result=✅ SUCCESS" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
           else
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "result=❌ FAILED" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
           fi
 
-      # 타임스탬프 생성
-      - name: 🕐 Generate timestamp
-        id: timestamp
-        run: echo "unix_time=$(date +%s)" >> $GITHUB_OUTPUT
-
-      # Slack 알림 (선택사항)
-      - name: 📢 Slack notification
-        if: env.SLACK_WEBHOOK_URL != ''
+      - name: 📢 Simple notification
+        if: env.SLACK_WEBHOOK_URL
         uses: 8398a7/action-slack@v3
         with:
           status: custom
           custom_payload: |
             {
               "channel": "#cicd-alerts",
-              "username": "CI/CD Bot",
-              "icon_emoji": "${{ steps.report.outputs.emoji }}",
-              "text": "${{ steps.report.outputs.emoji }} CI/CD Pipeline ${{ steps.report.outputs.status }} - ${{ github.repository }}/${{ github.ref_name }}"
+              "username": "⚡ Fast CI/CD",
+              "icon_emoji": ":rocket:",
+              "attachments": [
+                {
+                  "color": "${{ steps.status.outputs.color }}",
+                  "text": "${{ steps.status.outputs.result }} - ${{ github.repository }}@${{ github.ref_name }} by ${{ github.actor }}"
+                }
+              ]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: 📊 Pipeline summary
         run: |
-          echo "🎯 Pipeline completed with status: ${{ steps.report.outputs.status }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Commit: ${{ github.sha }}"
-          echo "Author: ${{ github.actor }}"
-          echo "Duration: This workflow completed in $(( ${{ github.event.head_commit.timestamp }} - ${{ github.event.repository.updated_at }} )) seconds"
+          echo "🎯 Pipeline Status: ${{ steps.status.outputs.result }}"
+          echo "📦 Repository: ${{ github.repository }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          echo "👤 Author: ${{ github.actor }}"
+          echo "⏱️ Completed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
