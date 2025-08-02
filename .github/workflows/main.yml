@@ -405,7 +405,7 @@ jobs:
       - name: 🐳 Build and push frontend image
         id: frontend-build
         uses: docker/build-push-action@v5
-        timeout-minutes: 15
+        timeout-minutes: 25
         with:
           context: ./frontend
           push: true
