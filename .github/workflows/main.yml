@@ -381,7 +381,7 @@ jobs:
       - name: 🐳 Build and push backend image
         id: backend-build
         uses: docker/build-push-action@v5
-        timeout-minutes: 12
+        timeout-minutes: 25  # 12분 → 25분으로 증가
         with:
           context: ./backend
           push: true
@@ -393,8 +393,13 @@ jobs:
             type=gha,mode=max,scope=backend
           build-args: |
             BUILDKIT_INLINE_CACHE=1
+            # 빌드 최적화 옵션
+            DEBIAN_FRONTEND=noninteractive
+            PIP_NO_CACHE_DIR=1
+            PIP_DISABLE_PIP_VERSION_CHECK=1
           provenance: false
           sbom: false
+          platforms: linux/amd64  # 단일 플랫폼으로 제한
 
       # 프론트엔드 빌드 (수정된 캐시 설정)
       - name: 🐳 Build and push frontend image
