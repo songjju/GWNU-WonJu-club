@@ -567,9 +567,24 @@ jobs:
 
       - name: 📊 Pipeline summary
         run: |
-          echo "🎯 Pipeline completed with status: ${{ steps.report.outputs.status }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Commit: ${{ github.sha }}"
-          echo "Author: ${{ github.actor }}"
-          echo "Duration: This workflow completed in $(( ${{ github.event.head_commit.timestamp }} - ${{ github.event.repository.updated_at }} )) seconds"
+          # 안전한 타임스탬프 계산
+          START_TIME=$(date -d "${{ github.event.head_commit.timestamp }}" +%s 2>/dev/null || echo "0")
+          CURRENT_TIME=$(date +%s)
+          
+          if [[ "${START_TIME}" != "0" ]]; then
+            DURATION=$((CURRENT_TIME - START_TIME))
+            DURATION_MIN=$((DURATION / 60))
+            DURATION_SEC=$((DURATION % 60))
+            DURATION_TEXT="${DURATION_MIN}분 ${DURATION_SEC}초"
+          else
+            DURATION_TEXT="계산 불가"
+          fi
+          
+          echo "🎯 Pipeline Status: ${{ steps.status.outputs.result }}"
+          echo "📦 Repository: ${{ github.repository }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          echo "📝 Commit: ${{ github.sha }}"
+          echo "👤 Author: ${{ github.actor }}"
+          echo "⏱️ Duration: ${DURATION_TEXT}"
+          echo "🕐 Completed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "🔗 Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
