@@ -1,4 +1,4 @@
-# 기존 nginx.conf가 있을 때의 수정된 Frontend Dockerfile
+# 수정된 Frontend Dockerfile
 FROM node:22-alpine AS builder
 
 # 작업 디렉토리 설정
@@ -12,8 +12,8 @@ RUN npm config set registry https://registry.npmjs.org/ && \
 # package.json과 package-lock.json 복사
 COPY package*.json ./
 
-# 의존성 설치
-RUN npm ci --only=production --silent --no-audit --no-fund
+# 의존성 설치 (수정된 버전)
+RUN npm ci --omit=dev --silent --no-audit --no-fund
 
 # 소스 코드 복사
 COPY . .
@@ -28,7 +28,7 @@ FROM nginx:alpine
 # 기존 기본 설정 파일 제거
 RUN rm -f /etc/nginx/conf.d/default.conf
 
-# 새로운 설정 파일 생성 (인라인으로)
+# 새로운 설정 파일 생성
 RUN cat > /etc/nginx/conf.d/default.conf << 'EOF'
 server {
     listen 3000;
@@ -46,7 +46,6 @@ server {
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_proxied expired no-cache no-store private must-revalidate auth;
     gzip_types
         text/plain
         text/css
@@ -82,9 +81,6 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_connect_timeout 30s;
-        proxy_send_timeout 30s;
-        proxy_read_timeout 30s;
     }
 
     # WebSocket 지원 (챗봇용)
@@ -108,62 +104,6 @@ server {
 
     # 에러 페이지 설정
     error_page 404 /index.html;
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-        root /usr/share/nginx/html;
-    }
-}
-EOF
-
-# 메인 nginx.conf도 최적화 (선택사항)
-RUN cat > /etc/nginx/nginx.conf << 'EOF'
-user nginx;
-worker_processes auto;
-error_log /var/log/nginx/error.log notice;
-pid /var/run/nginx.pid;
-
-events {
-    worker_connections 1024;
-    use epoll;
-    multi_accept on;
-}
-
-http {
-    include /etc/nginx/mime.types;
-    default_type application/octet-stream;
-
-    # 로그 포맷
-    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
-                    '$status $body_bytes_sent "$http_referer" '
-                    '"$http_user_agent" "$http_x_forwarded_for"';
-
-    access_log /var/log/nginx/access.log main;
-
-    # 성능 최적화
-    sendfile on;
-    tcp_nopush on;
-    tcp_nodelay on;
-    keepalive_timeout 65;
-    types_hash_max_size 2048;
-    client_max_body_size 16M;
-
-    # 보안 설정
-    server_tokens off;
-
-    # Gzip 설정
-    gzip on;
-    gzip_vary on;
-    gzip_min_length 1024;
-    gzip_types
-        text/plain
-        text/css
-        text/xml
-        text/javascript
-        application/javascript
-        application/xml+rss
-        application/json;
-
-    include /etc/nginx/conf.d/*.conf;
 }
 EOF
 
@@ -178,7 +118,7 @@ EXPOSE 3000
 
 # 헬스체크 추가
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 # Nginx 실행
 CMD ["nginx", "-g", "daemon off;"]
