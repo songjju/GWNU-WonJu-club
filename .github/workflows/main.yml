@@ -295,8 +295,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, code-quality]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    timeout-minutes: 25  # 타임아웃 증가
-  
+    timeout-minutes: 25
+    
     permissions:
       contents: read
       packages: write
@@ -317,16 +317,13 @@ jobs:
         run: |
           echo "Before cleanup:"
           df -h
-        
-          # 불필요한 패키지 제거
+          
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
           sudo rm -rf /usr/local/lib/android /opt/microsoft/msedge /opt/microsoft/powershell
           sudo apt-get autoremove -y
           sudo apt-get autoclean -y
-        
-          # Docker 정리
           docker system prune -af --volumes
-        
+          
           echo "After cleanup:"
           df -h
 
@@ -337,11 +334,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITOPS_TOKEN }}
 
+      # 소문자 변환된 이미지 이름 생성
+      - name: 🏷️ Generate lowercase image names
+        id: image-names
+        run: |
+          # GitHub repository를 소문자로 변환
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          
+          echo "repository-lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+          echo "backend-image-name=${REGISTRY}/${REPO_LOWER}/backend" >> $GITHUB_OUTPUT
+          echo "frontend-image-name=${REGISTRY}/${REPO_LOWER}/frontend" >> $GITHUB_OUTPUT
+          
+          echo "Backend image name: ${REGISTRY}/${REPO_LOWER}/backend"
+          echo "Frontend image name: ${REGISTRY}/${REPO_LOWER}/frontend"
+
       - name: 🏷️ Extract backend metadata
         id: backend-meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
+          images: ${{ steps.image-names.outputs.backend-image-name }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -352,7 +363,7 @@ jobs:
         id: frontend-meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
+          images: ${{ steps.image-names.outputs.frontend-image-name }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -366,7 +377,7 @@ jobs:
             network=host
             image=moby/buildkit:buildx-stable-1
 
-      # 백엔드 빌드 (더 안정적인 설정)
+      # 백엔드 빌드 (수정된 캐시 설정)
       - name: 🐳 Build and push backend image
         id: backend-build
         uses: docker/build-push-action@v5
@@ -378,20 +389,18 @@ jobs:
           labels: ${{ steps.backend-meta.outputs.labels }}
           cache-from: |
             type=gha,scope=backend
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:cache
           cache-to: |
             type=gha,mode=max,scope=backend
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:cache,mode=max
           build-args: |
             BUILDKIT_INLINE_CACHE=1
-          provenance: false  # 속도 향상을 위해 비활성화
-          sbom: false       # 속도 향상을 위해 비활성화
+          provenance: false
+          sbom: false
 
-      # 프론트엔드 빌드 (최적화된 설정)
+      # 프론트엔드 빌드 (수정된 캐시 설정)
       - name: 🐳 Build and push frontend image
         id: frontend-build
         uses: docker/build-push-action@v5
-        timeout-minutes: 15  # 프론트엔드는 더 오래 걸릴 수 있음
+        timeout-minutes: 15
         with:
           context: ./frontend
           push: true
@@ -399,15 +408,13 @@ jobs:
           labels: ${{ steps.frontend-meta.outputs.labels }}
           cache-from: |
             type=gha,scope=frontend
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:cache
           cache-to: |
             type=gha,mode=max,scope=frontend
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:cache,mode=max
           build-args: |
             BUILDKIT_INLINE_CACHE=1
-            NODE_OPTIONS=--max_old_space_size=4096  # 메모리 증가
-          provenance: false  # 속도 향상
-          sbom: false       # 속도 향상
+            NODE_OPTIONS=--max_old_space_size=4096
+          provenance: false
+          sbom: false
 
       # 이미지 참조 정리
       - name: 🏷️ Extract clean image references
@@ -415,10 +422,10 @@ jobs:
         run: |
           BACKEND_TAG=$(echo "${{ steps.backend-meta.outputs.tags }}" | head -n1 | tr -d '\n\r')
           FRONTEND_TAG=$(echo "${{ steps.frontend-meta.outputs.tags }}" | head -n1 | tr -d '\n\r')
-        
+          
           echo "backend-image=${BACKEND_TAG}" >> $GITHUB_OUTPUT
           echo "frontend-image=${FRONTEND_TAG}" >> $GITHUB_OUTPUT
-        
+          
           echo "Backend image: ${BACKEND_TAG}"
           echo "Frontend image: ${FRONTEND_TAG}"
 
@@ -427,10 +434,8 @@ jobs:
         continue-on-error: true
         timeout-minutes: 3
         run: |
-          # Trivy 설치
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-        
-          # 빠른 스캔 (CRITICAL만)
+          
           trivy image \
             --format sarif \
             --output backend-trivy.sarif \
@@ -446,7 +451,6 @@ jobs:
         continue-on-error: true
         timeout-minutes: 3
         run: |
-          # 빠른 스캔 (CRITICAL만)
           trivy image \
             --format sarif \
             --output frontend-trivy.sarif \
