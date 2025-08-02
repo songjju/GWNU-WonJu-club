@@ -1,22 +1,34 @@
-# 가져올 이미지를 정의
-FROM node:22
-# 경로 설정하기
-WORKDIR /App/frontend
-# package.json 워킹 디렉토리에 복사 (.은 설정한 워킹 디렉토리를 뜻함)
-COPY package.json .
-# 명령어 실행 (의존성 설치)
-RUN npm install
-# 현재 디렉토리의 모든 파일을 도커 컨테이너의 워킹 디렉토리에 복사한다.
+# 최적화된 Frontend Dockerfile
+FROM node:22-alpine AS builder
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 패키지 관리자 최적화
+RUN npm config set registry https://registry.npmjs.org/ && \
+    npm config set audit false && \
+    npm config set fund false
+
+# package.json과 package-lock.json 복사 (캐시 최적화)
+COPY package*.json ./
+
+# 의존성 설치 (캐시 활용 최대화)
+RUN npm ci --only=production --silent --no-audit --no-fund
+
+# 소스 코드 복사
 COPY . .
 
-# 각각의 명령어들은 한줄 한줄씩 캐싱되어 실행된다.
-# package.json의 내용은 자주 바뀌진 않을 거지만
-# 소스 코드는 자주 바뀌는데
-# npm install과 COPY . . 를 동시에 수행하면
-# 소스 코드가 조금 달라질때도 항상 npm install을 수행해서 리소스가 낭비된다.
+# 빌드 실행 (메모리 최적화)
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+RUN npm run build
 
-# 3000번 포트 노출
+# 프로덕션 이미지
+FROM nginx:alpine
+
+# Nginx 설정
+COPY --from=builder /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 EXPOSE 3000
 
-# npm start 스크립트 실행
-# CMD ["npm", "start"]
+CMD ["nginx", "-g", "daemon off;"]
