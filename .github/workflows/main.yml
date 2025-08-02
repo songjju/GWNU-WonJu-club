@@ -405,21 +405,29 @@ jobs:
       - name: 🐳 Build and push frontend image
         id: frontend-build
         uses: docker/build-push-action@v5
-        timeout-minutes: 25
+        timeout-minutes: 15  # 25분 → 15분으로 단축
         with:
           context: ./frontend
           push: true
           tags: ${{ steps.frontend-meta.outputs.tags }}
           labels: ${{ steps.frontend-meta.outputs.labels }}
           cache-from: |
+            type=gha,scope=frontend-${{ hashFiles('frontend/package-lock.json') }}
             type=gha,scope=frontend
           cache-to: |
+            type=gha,mode=max,scope=frontend-${{ hashFiles('frontend/package-lock.json') }}
             type=gha,mode=max,scope=frontend
           build-args: |
             BUILDKIT_INLINE_CACHE=1
             NODE_OPTIONS=--max_old_space_size=4096
+            # 빌드 최적화 옵션
+            GENERATE_SOURCEMAP=false
+            DISABLE_ESLINT_PLUGIN=true
+            TSC_COMPILE_ON_ERROR=true
+            FAST_REFRESH=false
           provenance: false
           sbom: false
+          platforms: linux/amd64
 
       # 이미지 참조 정리
       - name: 🏷️ Extract clean image references

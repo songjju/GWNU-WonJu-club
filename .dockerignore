@@ -1,47 +1,77 @@
-# Frontend .dockerignore
-node_modules
+# 최적화된 frontend/.dockerignore
+# Node modules (가장 큰 용량)
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# 테스트 및 개발 파일
+# 빌드 결과물 (Docker에서 다시 빌드하므로)
+build/
+dist/
+
+# 테스트 관련 파일
 src/**/*.test.js
 src/**/*.test.jsx
 src/**/*.test.ts
 src/**/*.test.tsx
+src/**/*.spec.js
+src/**/*.spec.jsx
+src/**/*.spec.ts
+src/**/*.spec.tsx
 **/__tests__/
 **/__mocks__/
 coverage/
+.nyc_output/
 
-# 빌드 결과물 (다단계 빌드에서 제외)
-build/
-dist/
-
-# 환경 설정 파일
+# 개발 환경 설정
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# IDE 및 에디터
+# IDE 설정
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS 생성 파일
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Git 관련
 .git/
 .gitignore
+.gitattributes
+
+# 문서 및 README
 README.md
 CHANGELOG.md
+LICENSE
+*.md
+
+# 설정 파일
+.eslintrc*
+.prettierrc*
+jest.config.*
+craco.config.*
+webpack.config.*
+tsconfig.json
 
 # CI/CD 관련
 .github/
 .gitlab-ci.yml
 docker-compose*.yml
-Dockerfile.dev
+Dockerfile*
+.dockerignore
+
+# 기타 개발 도구
+.storybook/
+stories/
