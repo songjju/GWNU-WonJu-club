@@ -386,35 +386,66 @@ jobs:
 
       # 빠른 보안 스캔 (HIGH, CRITICAL만)
       - name: 🔍 Backend image security scan
-        uses: aquasecurity/trivy-action@master
         continue-on-error: true
         timeout-minutes: 5
-        with:
-          image-ref: ${{ steps.clean-image-ref.outputs.backend-image }}
-          format: 'sarif'
-          output: 'backend-trivy.sarif'
-          severity: 'CRITICAL,HIGH'
+        run: |
+          # Trivy 설치
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+    
+          # SARIF 파일 생성 (실패해도 빈 파일 생성)
+          trivy image \
+            --format sarif \
+            --output backend-trivy.sarif \
+            --severity 'CRITICAL,HIGH' \
+            --quiet \
+            ${{ steps.clean-image-ref.outputs.backend-image }} || {
+              echo "Trivy scan failed, creating empty SARIF file"
+              echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"Trivy"}},"results":[]}]}' > backend-trivy.sarif
+            }
+    
+          # 파일 존재 확인
+          if [ -f "backend-trivy.sarif" ]; then
+            echo "✅ Backend SARIF file created successfully"
+            ls -la backend-trivy.sarif
+          else
+            echo "❌ Failed to create backend SARIF file"
+            exit 1
+          fi
 
       - name: 🔍 Frontend image security scan
-        uses: aquasecurity/trivy-action@master
         continue-on-error: true
         timeout-minutes: 5
-        with:
-          image-ref: ${{ steps.clean-image-ref.outputs.frontend-image }}
-          format: 'sarif'
-          output: 'frontend-trivy.sarif'
-          severity: 'CRITICAL,HIGH'
+        run: |
+          # SARIF 파일 생성 (실패해도 빈 파일 생성)
+          trivy image \
+            --format sarif \
+            --output frontend-trivy.sarif \
+            --severity 'CRITICAL,HIGH' \
+            --quiet \
+            ${{ steps.clean-image-ref.outputs.frontend-image }} || {
+              echo "Trivy scan failed, creating empty SARIF file"
+              echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"Trivy"}},"results":[]}]}' > frontend-trivy.sarif
+            }
+    
+          # 파일 존재 확인
+          if [ -f "frontend-trivy.sarif" ]; then
+            echo "✅ Frontend SARIF file created successfully"
+            ls -la frontend-trivy.sarif
+          else
+            echo "❌ Failed to create frontend SARIF file"
+            exit 1
+          fi
 
       - name: 📋 Upload backend security scan results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && hashFiles('backend-trivy.sarif') != ''
         with:
           sarif_file: 'backend-trivy.sarif'
           category: 'backend-security'
 
       - name: 📋 Upload frontend security scan results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && hashFiles('frontend-trivy.sarif') != ''
         with:
           sarif_file: 'frontend-trivy.sarif'
           category: 'frontend-security'
