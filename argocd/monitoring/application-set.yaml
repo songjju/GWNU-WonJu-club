@@ -37,7 +37,7 @@ spec:
     spec:
       project: club-platform
       source:
-        repoURL: https://github.com/사용자명/동아리플랫폼
+        repoURL: https://github.com/songjju/GWNU-WonJu-club
         targetRevision: "{{branch}}"
         path: "manifests/overlays/{{environment}}"
       destination:

@@ -19,3 +19,11 @@ namePrefix: staging-
 
 commonLabels:
   environment: staging
+
+images:
+  - name: backend-image
+    newName: ghcr.io/songjju/gwnu-wonju-club/backend
+    newTag: develop
+  - name: frontend-image
+    newName: ghcr.io/songjju/gwnu-wonju-club/frontend
+    newTag: develop
