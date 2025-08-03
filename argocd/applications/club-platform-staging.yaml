@@ -35,9 +35,9 @@ spec:
     retry:
       limit: 5
       backoff:
-        duration: 30s
+        duration: 5s
         factor: 2
-        maxDuration: 10m
+        maxDuration: 3m
   
   revisionHistoryLimit: 10
   
