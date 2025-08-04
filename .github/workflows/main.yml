@@ -777,13 +777,13 @@ jobs:
 
       # ✅ 배포 상태 확인 및 ImagePullBackOff 검증
       - name: ✅ Verify deployment and check ImagePullBackOff
-        timeout-minutes: 5
+        timeout-minutes: 8
         env:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
         run: |
           NAMESPACE="club-platform-${ENVIRONMENT}"
-          
-          echo "🔍 Checking deployment status..."
+    
+          echo "🔍 Checking deployment status in namespace: ${NAMESPACE}..."
           
           # 배포 완료 대기
           kubectl rollout status deployment/staging-backend -n ${NAMESPACE} --timeout=300s || echo "Backend deployment timeout"
