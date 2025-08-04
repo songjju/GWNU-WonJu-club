@@ -652,7 +652,7 @@ jobs:
 
             # Kustomize 배포 (--validate=false로 검증 건너뛰기)
             echo "🚀 Applying Kustomize manifests..."
-            kubectl apply -k manifests/overlays/${ENVIRONMENT} --validate=false
+            kubectl apply -k manifests/overlays/${ENVIRONMENT} --validate=false --request-timeout=300s
 
           else
             echo "📦 Creating basic deployment with ImagePullSecret..."
@@ -786,8 +786,8 @@ jobs:
           echo "🔍 Checking deployment status in namespace: ${NAMESPACE}..."
           
           # 배포 완료 대기
-          kubectl rollout status deployment/staging-backend -n ${NAMESPACE} --timeout=300s || echo "Backend deployment timeout"
-          kubectl rollout status deployment/staging-frontend -n ${NAMESPACE} --timeout=300s || echo "Frontend deployment timeout"
+          kubectl rollout status deployment/staging-backend -n ${NAMESPACE} --timeout=300s --request-timeout=300s || echo "Backend deployment timeout"
+          kubectl rollout status deployment/staging-frontend -n ${NAMESPACE} --timeout=300s --request-timeout=300s || echo "Frontend deployment timeout"
           
           # 최종 상태 확인
           echo "📊 Final status:"
