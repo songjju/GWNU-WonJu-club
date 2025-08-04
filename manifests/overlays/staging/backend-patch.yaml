@@ -40,22 +40,22 @@ spec:
         - name: SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: backend-secrets
+              name: staging-backend-secrets
               key: secret-key
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: backend-secrets
+              name: staging-backend-secrets
               key: db-password
         - name: EMAIL_HOST_USER
           valueFrom:
             secretKeyRef:
-              name: backend-secrets
+              name: staging-backend-secrets
               key: email-host-user
         - name: EMAIL_HOST_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: backend-secrets
+              name: staging-backend-secrets
               key: email-host-password
         
         # ConfigMap에서 일반 설정 주입 (기존 configmap.yaml 활용)
