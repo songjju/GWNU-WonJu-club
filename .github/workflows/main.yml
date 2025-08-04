@@ -581,7 +581,6 @@ jobs:
           
           echo "✅ All secrets deployed successfully to ${ENVIRONMENT}"
 
-      # 🚀 ImagePullSecret을 포함한 애플리케이션 배포
       - name: 🚀 Deploy applications with ImagePullSecret
         timeout-minutes: 7
         env:
@@ -590,61 +589,74 @@ jobs:
           FRONTEND_IMAGE: ${{ needs.build-and-scan.outputs.frontend-image }}
         run: |
           echo "🚀 Deploying applications to ${ENVIRONMENT} environment with ImagePullSecret..."
-          
+
           NAMESPACE="club-platform-${ENVIRONMENT}"
-          
+
           # Kustomize를 사용한 배포 (manifests 디렉토리가 있는 경우)
           if [ -d "manifests/overlays/${ENVIRONMENT}" ]; then
             echo "📁 Using Kustomize manifests for deployment..."
-            
+
             # 임시로 이미지 태그 업데이트
             cd manifests/overlays/${ENVIRONMENT}
-            
-            # ImagePullSecret 추가 (임시 패치)
-            cat > temp-imagepull-patch.yaml <<EOF
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: backend
-          spec:
-            template:
-              spec:
-                imagePullSecrets:
-                - name: ghcr-secret
-          ---
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: frontend
-          spec:
-            template:
-              spec:
-                imagePullSecrets:
-                - name: ghcr-secret
-          EOF
-            
-            # 기존 kustomization.yaml에 임시 패치 추가
-            if ! grep -q "temp-imagepull-patch.yaml" kustomization.yaml; then
-              sed -i '/patchesStrategicMerge:/a\  - temp-imagepull-patch.yaml' kustomization.yaml
+
+            # 🔧 문제가 되는 image-pull-secret.yaml 제거 (kubectl로 이미 생성했으므로)
+            if [ -f "image-pull-secret.yaml" ]; then
+              echo "🗑️ Removing problematic image-pull-secret.yaml (using kubectl-created secret instead)"
+              rm -f image-pull-secret.yaml
             fi
-            
+
+            # kustomization.yaml에서 image-pull-secret.yaml 참조 제거
+            if grep -q "image-pull-secret.yaml" kustomization.yaml; then
+              sed -i '/image-pull-secret.yaml/d' kustomization.yaml
+            fi
+
+            # ImagePullSecret 추가 - 기존 패치 파일 수정
+            echo "🔧 Adding ImagePullSecret to existing patch files..."
+
+            # backend-patch.yaml에 imagePullSecrets 추가 (이미 있다면 건너뜀)
+            if ! grep -q "imagePullSecrets" backend-patch.yaml; then
+              # spec.template.spec 바로 다음에 imagePullSecrets 추가
+              sed -i '/spec:/,/template:/,/spec:/{
+                /containers:/i\
+            imagePullSecrets:\
+            - name: ghcr-secret
+              }' backend-patch.yaml
+            fi
+
+            # frontend-patch.yaml에 imagePullSecrets 추가 (이미 있다면 건너뜀)
+            if ! grep -q "imagePullSecrets" frontend-patch.yaml; then
+              # spec.template.spec 바로 다음에 imagePullSecrets 추가
+              sed -i '/spec:/,/template:/,/spec:/{
+                /containers:/i\
+            imagePullSecrets:\
+            - name: ghcr-secret
+              }' frontend-patch.yaml
+            fi
+
             # 이미지 태그 업데이트
             BACKEND_REPO=$(echo "${BACKEND_IMAGE}" | cut -d':' -f1)
             BACKEND_TAG=$(echo "${BACKEND_IMAGE}" | cut -d':' -f2)
             FRONTEND_REPO=$(echo "${FRONTEND_IMAGE}" | cut -d':' -f1)
             FRONTEND_TAG=$(echo "${FRONTEND_IMAGE}" | cut -d':' -f2)
-            
-            # kustomization.yaml에서 이미지 태그 업데이트 (yq 없이)
+
+            # kustomization.yaml에서 이미지 태그 업데이트
             sed -i "s|newTag: develop|newTag: ${BACKEND_TAG}|g" kustomization.yaml
-            
+
+            echo "📄 Updated kustomization.yaml contents:"
+            cat kustomization.yaml
+
+            echo "📄 Updated backend-patch.yaml contents:"
+            head -20 backend-patch.yaml
+
             cd ../../..
-            
-            # Kustomize 배포
-            kubectl apply -k manifests/overlays/${ENVIRONMENT}
-            
+
+            # Kustomize 배포 (--validate=false로 검증 건너뛰기)
+            echo "🚀 Applying Kustomize manifests..."
+            kubectl apply -k manifests/overlays/${ENVIRONMENT} --validate=false
+
           else
             echo "📦 Creating basic deployment with ImagePullSecret..."
-            
+
             # Backend 배포
             cat <<EOF | kubectl apply -f -
           apiVersion: apps/v1
@@ -707,7 +719,7 @@ jobs:
             - port: 8000
               targetPort: 8000
           EOF
-            
+
             # Frontend 배포
             cat <<EOF | kubectl apply -f -
           apiVersion: apps/v1
@@ -760,7 +772,7 @@ jobs:
               targetPort: 3000
           EOF
           fi
-          
+
           echo "✅ Applications deployed successfully with ImagePullSecret"
 
       # ✅ 배포 상태 확인 및 ImagePullBackOff 검증

@@ -14,7 +14,6 @@ resources:
   - ../../base
   - namespace.yaml
   - secrets.yaml
-  - image-pull-secret.yaml  # ImagePullBackOff 해결을 위해 추가
 
 patchesStrategicMerge:
   - backend-patch.yaml
