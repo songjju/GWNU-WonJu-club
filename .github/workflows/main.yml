@@ -562,6 +562,16 @@ jobs:
           echo "🔐 Deploying secrets to ${ENVIRONMENT} environment..."
           
           NAMESPACE="club-platform-${ENVIRONMENT}"
+
+          # ConfigMap 생성
+          kubectl create configmap backend-config \
+            --from-literal=DEBUG="True" \
+            --from-literal=DB_NAME="gwnu_club_db_staging" \
+            --from-literal=DB_USER="gwnu_user" \
+            --from-literal=DB_HOST="mysql" \
+            --from-literal=DB_PORT="3306" \
+            --namespace="${NAMESPACE}" \
+            --dry-run=client -o yaml | kubectl apply -f -
           
           # Backend secrets
           kubectl create secret generic backend-secrets \

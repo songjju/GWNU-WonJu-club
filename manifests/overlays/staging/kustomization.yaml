@@ -13,7 +13,6 @@ namespace: club-platform-staging
 resources:
   - ../../base
   - namespace.yaml
-  - secrets.yaml
 
 patchesStrategicMerge:
   - backend-patch.yaml
