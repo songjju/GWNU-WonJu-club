@@ -2,21 +2,130 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
+  labels:
+    app: club-platform
+    component: backend
+    environment: staging
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: club-platform
+      component: backend
   template:
+    metadata:
+      labels:
+        app: club-platform
+        component: backend
     spec:
+      # 🔑 ImagePullBackOff 해결: ImagePullSecret 추가
+      imagePullSecrets:
+      - name: ghcr-secret
+      
       containers:
       - name: backend
+        image: backend-image  # kustomization.yaml에서 실제 이미지로 교체됨
+        ports:
+        - containerPort: 8000
+          name: http
+        
+        # 환경변수 설정 (기존 설정 유지 + Secret 연동 추가)
         env:
         - name: DEBUG
           value: "True"
         - name: ALLOWED_HOSTS
-          value: "staging.club-platform.local,localhost"
+          value: "staging.club-platform.local,localhost,127.0.0.1"
+        
+        # 🔐 Secret에서 민감한 정보 주입
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: secret-key
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: db-password
+        - name: EMAIL_HOST_USER
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: email-host-user
+        - name: EMAIL_HOST_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: email-host-password
+        
+        # ConfigMap에서 일반 설정 주입 (기존 configmap.yaml 활용)
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        
+        # 🔧 리소스 제한 (ImagePullBackOff 해결 후 안정적 운영을 위해 업데이트)
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "100m"
+            memory: "256Mi"  # 128Mi → 256Mi로 증가
+            cpu: "250m"      # 100m → 250m으로 증가
           limits:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "512Mi"  # 256Mi → 512Mi로 증가
+            cpu: "500m"      # 250m → 500m으로 증가
+        
+        # 🏥 Health Check 추가 (서비스 안정성 향상)
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /ready/
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # 보안 컨텍스트
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        
+        # 볼륨 마운트 (로그, 임시 파일 등)
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: logs-volume
+          mountPath: /app/logs
+      
+      # Pod 레벨 보안 설정
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsUser: 1000
+      
+      # 볼륨 정의
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: logs-volume
+        emptyDir: {}
+      
+      # Pod 재시작 정책
+      restartPolicy: Always
+      
+      # DNS 정책
+      dnsPolicy: ClusterFirst
+      
+      # 종료 대기 시간
+      terminationGracePeriodSeconds: 30

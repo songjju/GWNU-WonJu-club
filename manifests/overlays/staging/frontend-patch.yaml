@@ -2,12 +2,113 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
+  labels:
+    app: club-platform
+    component: frontend
+    environment: staging
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: club-platform
+      component: frontend
   template:
+    metadata:
+      labels:
+        app: club-platform
+        component: frontend
     spec:
+      # 🔑 ImagePullBackOff 해결: ImagePullSecret 추가
+      imagePullSecrets:
+      - name: ghcr-secret
+      
       containers:
       - name: frontend
+        image: frontend-image  # kustomization.yaml에서 실제 이미지로 교체됨
+        ports:
+        - containerPort: 3000
+          name: http
+        
+        # 환경변수 설정 (기존 설정 유지)
         env:
         - name: REACT_APP_API_URL
-          value: "http://staging-backend:8000"
+          value: "http://staging-backend-service:8000"  # Service 이름으로 수정
+        - name: NODE_ENV
+          value: "development"
+        - name: REACT_APP_ENV
+          value: "staging"
+        - name: GENERATE_SOURCEMAP
+          value: "false"
+        - name: REACT_APP_VERSION
+          value: "staging-latest"
+        
+        # 🔧 리소스 제한 (기존 설정 유지하되 조금 증가)
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        
+        # 🏥 Health Check 추가 (서비스 안정성 향상)
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # 보안 컨텍스트
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: false  # React 앱은 임시 파일 생성 필요
+          capabilities:
+            drop:
+            - ALL
+        
+        # 볼륨 마운트 (nginx 캐시, 임시 파일 등)
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+        - name: nginx-run
+          mountPath: /var/run
+      
+      # Pod 레벨 보안 설정
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsUser: 1000
+      
+      # 볼륨 정의
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: nginx-cache
+        emptyDir: {}
+      - name: nginx-run
+        emptyDir: {}
+      
+      # Pod 재시작 정책
+      restartPolicy: Always
+      
+      # DNS 정책
+      dnsPolicy: ClusterFirst
+      
+      # 종료 대기 시간
+      terminationGracePeriodSeconds: 30

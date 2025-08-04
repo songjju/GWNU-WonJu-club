@@ -1,4 +1,4 @@
-name: 🚀 Optimized CI/CD Pipeline with Secure Secret Management
+name: 🚀 Optimized CI/CD Pipeline with ImagePullBackOff Fix
 
 on:
   push:
@@ -489,9 +489,9 @@ jobs:
           sarif_file: 'frontend-trivy.sarif'
           category: 'frontend-security'
   
-  # 🚀 안전한 배포 (Self-hosted Runner) - ImagePullBackOff 해결 적용
+  # 🚀 ImagePullBackOff 해결을 위한 배포 (Self-hosted Runner)
   deploy:
-    name: 🚀 Secure Deployment
+    name: 🚀 Deploy with ImagePullSecret Fix
     runs-on: self-hosted
     needs: build-and-scan
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
@@ -524,7 +524,7 @@ jobs:
           echo "✅ Using context: ${CURRENT_CONTEXT}"
           echo "🎯 Kubernetes cluster is ready for deployment"
 
-      # 🔑 ImagePullSecret 생성 (핵심 해결 방법)
+      # 🔑 핵심: ImagePullSecret 생성
       - name: 🔑 Create ImagePullSecret for GHCR
         timeout-minutes: 3
         env:
@@ -549,7 +549,7 @@ jobs:
           
           echo "✅ ImagePullSecret created successfully"
 
-      - name: 🔐 Deploy secrets securely
+      - name: 🔐 Deploy application secrets
         timeout-minutes: 3
         env:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
@@ -593,8 +593,61 @@ jobs:
           
           NAMESPACE="club-platform-${ENVIRONMENT}"
           
-          # Backend 배포 (ImagePullSecret 포함)
-          cat <<EOF | kubectl apply -f -
+          # Kustomize를 사용한 배포 (manifests 디렉토리가 있는 경우)
+          if [ -d "manifests/overlays/${ENVIRONMENT}" ]; then
+            echo "📁 Using Kustomize manifests for deployment..."
+            
+            # 임시로 이미지 태그 업데이트
+            cd manifests/overlays/${ENVIRONMENT}
+            
+            # ImagePullSecret 추가 (임시 패치)
+            cat > temp-imagepull-patch.yaml <<EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: backend
+          spec:
+            template:
+              spec:
+                imagePullSecrets:
+                - name: ghcr-secret
+          ---
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: frontend
+          spec:
+            template:
+              spec:
+                imagePullSecrets:
+                - name: ghcr-secret
+          EOF
+            
+            # 기존 kustomization.yaml에 임시 패치 추가
+            if ! grep -q "temp-imagepull-patch.yaml" kustomization.yaml; then
+              sed -i '/patchesStrategicMerge:/a\  - temp-imagepull-patch.yaml' kustomization.yaml
+            fi
+            
+            # 이미지 태그 업데이트
+            BACKEND_REPO=$(echo "${BACKEND_IMAGE}" | cut -d':' -f1)
+            BACKEND_TAG=$(echo "${BACKEND_IMAGE}" | cut -d':' -f2)
+            FRONTEND_REPO=$(echo "${FRONTEND_IMAGE}" | cut -d':' -f1)
+            FRONTEND_TAG=$(echo "${FRONTEND_IMAGE}" | cut -d':' -f2)
+            
+            # kustomization.yaml에서 이미지 태그 업데이트
+            yq eval ".images[0].newTag = \"${BACKEND_TAG}\"" -i kustomization.yaml
+            yq eval ".images[1].newTag = \"${FRONTEND_TAG}\"" -i kustomization.yaml
+            
+            cd ../../..
+            
+            # Kustomize 배포
+            kubectl apply -k manifests/overlays/${ENVIRONMENT}
+            
+          else
+            echo "📦 Creating basic deployment with ImagePullSecret..."
+            
+            # Backend 배포
+            cat <<EOF | kubectl apply -f -
           apiVersion: apps/v1
           kind: Deployment
           metadata:
@@ -610,13 +663,11 @@ jobs:
               matchLabels:
                 app: club-platform
                 component: backend
-                environment: ${ENVIRONMENT}
             template:
               metadata:
                 labels:
                   app: club-platform
                   component: backend
-                  environment: ${ENVIRONMENT}
               spec:
                 imagePullSecrets:
                 - name: ghcr-secret
@@ -636,16 +687,6 @@ jobs:
                       secretKeyRef:
                         name: backend-secrets
                         key: db-password
-                  - name: EMAIL_HOST_USER
-                    valueFrom:
-                      secretKeyRef:
-                        name: backend-secrets
-                        key: email-host-user
-                  - name: EMAIL_HOST_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        name: backend-secrets
-                        key: email-host-password
                   resources:
                     requests:
                       memory: "256Mi"
@@ -653,10 +694,23 @@ jobs:
                     limits:
                       memory: "512Mi"
                       cpu: "500m"
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: staging-backend-service
+            namespace: ${NAMESPACE}
+          spec:
+            selector:
+              app: club-platform
+              component: backend
+            ports:
+            - port: 8000
+              targetPort: 8000
           EOF
-          
-          # Frontend 배포 (ImagePullSecret 포함)
-          cat <<EOF | kubectl apply -f -
+            
+            # Frontend 배포
+            cat <<EOF | kubectl apply -f -
           apiVersion: apps/v1
           kind: Deployment
           metadata:
@@ -672,13 +726,11 @@ jobs:
               matchLabels:
                 app: club-platform
                 component: frontend
-                environment: ${ENVIRONMENT}
             template:
               metadata:
                 labels:
                   app: club-platform
                   component: frontend
-                  environment: ${ENVIRONMENT}
               spec:
                 imagePullSecrets:
                 - name: ghcr-secret
@@ -694,24 +746,6 @@ jobs:
                     limits:
                       memory: "256Mi"
                       cpu: "200m"
-          EOF
-          
-          # 서비스 생성 (필요한 경우)
-          cat <<EOF | kubectl apply -f -
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: staging-backend-service
-            namespace: ${NAMESPACE}
-          spec:
-            selector:
-              app: club-platform
-              component: backend
-              environment: ${ENVIRONMENT}
-            ports:
-            - port: 8000
-              targetPort: 8000
-            type: ClusterIP
           ---
           apiVersion: v1
           kind: Service
@@ -722,113 +756,20 @@ jobs:
             selector:
               app: club-platform
               component: frontend
-              environment: ${ENVIRONMENT}
             ports:
             - port: 3000
               targetPort: 3000
-            type: ClusterIP
           EOF
+          fi
           
           echo "✅ Applications deployed successfully with ImagePullSecret"
 
-      - name: 🏥 Health check and deployment verification
+      # ✅ 배포 상태 확인 및 ImagePullBackOff 검증
+      - name: ✅ Verify deployment and check ImagePullBackOff
         timeout-minutes: 5
         env:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
         run: |
           NAMESPACE="club-platform-${ENVIRONMENT}"
           
-          echo "🔍 Checking deployment health in namespace: ${NAMESPACE}..."
-          
-          # 배포 상태 확인
-          echo "📊 Deployment status:"
-          kubectl get deployments -n ${NAMESPACE}
-          
-          # Pod 상태 확인
-          echo "🐳 Pod status:"
-          kubectl get pods -n ${NAMESPACE}
-          
-          # 배포 완료까지 대기
-          echo "⏳ Waiting for deployments to be ready..."
-          kubectl rollout status deployment/staging-backend -n ${NAMESPACE} --timeout=300s || echo "Backend deployment timeout"
-          kubectl rollout status deployment/staging-frontend -n ${NAMESPACE} --timeout=300s || echo "Frontend deployment timeout"
-          
-          # 최종 상태 확인
-          echo "🎯 Final status check:"
-          kubectl get all -n ${NAMESPACE}
-          
-          # ImagePullBackOff 오류 체크
-          echo "🔍 Checking for ImagePullBackOff errors..."
-          kubectl get pods -n ${NAMESPACE} -o wide
-          
-          # 이벤트 로그 확인 (문제가 있는 경우)
-          echo "📝 Recent events in namespace:"
-          kubectl get events -n ${NAMESPACE} --sort-by='.lastTimestamp' | tail -10
-          
-          echo "✅ Health check completed"
-
-  # 📢 간소화된 알림 시스템
-  notify:
-    name: 📢 Notifications
-    runs-on: ubuntu-latest
-    needs: [security-validation, code-quality, test, build-and-scan, deploy]
-    if: always() && (failure() || success())
-    timeout-minutes: 3
-    
-    steps:
-      - name: 📊 Generate simple report
-        id: report
-        run: |
-          # 간단한 상태 체크
-          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "emoji=❌" >> $GITHUB_OUTPUT
-          else
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "emoji=✅" >> $GITHUB_OUTPUT
-          fi
-
-      # 타임스탬프 생성
-      - name: 🕐 Generate timestamp
-        id: timestamp
-        run: echo "unix_time=$(date +%s)" >> $GITHUB_OUTPUT
-
-      # Slack 알림 (선택사항)
-      - name: 📢 Slack notification
-        if: env.SLACK_WEBHOOK_URL != ''
-        uses: 8398a7/action-slack@v3
-        with:
-          status: custom
-          custom_payload: |
-            {
-              "channel": "#cicd-alerts",
-              "username": "CI/CD Bot",
-              "icon_emoji": "${{ steps.report.outputs.emoji }}",
-              "text": "${{ steps.report.outputs.emoji }} CI/CD Pipeline ${{ steps.report.outputs.status }} - ${{ github.repository }}/${{ github.ref_name }}"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: 📊 Pipeline summary
-        run: |
-          # 안전한 타임스탬프 계산
-          START_TIME=$(date -d "${{ github.event.head_commit.timestamp }}" +%s 2>/dev/null || echo "0")
-          CURRENT_TIME=$(date +%s)
-          
-          if [[ "${START_TIME}" != "0" ]]; then
-            DURATION=$((CURRENT_TIME - START_TIME))
-            DURATION_MIN=$((DURATION / 60))
-            DURATION_SEC=$((DURATION % 60))
-            DURATION_TEXT="${DURATION_MIN}분 ${DURATION_SEC}초"
-          else
-            DURATION_TEXT="계산 불가"
-          fi
-          
-          echo "🎯 Pipeline Status: ${{ steps.report.outputs.status }}"
-          echo "📦 Repository: ${{ github.repository }}"
-          echo "🌿 Branch: ${{ github.ref_name }}"
-          echo "📝 Commit: ${{ github.sha }}"
-          echo "👤 Author: ${{ github.actor }}"
-          echo "⏱️ Duration: ${DURATION_TEXT}"
-          echo "🕐 Completed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "🔗 Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "
