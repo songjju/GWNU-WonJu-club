@@ -13,6 +13,8 @@ namespace: club-platform-staging
 resources:
   - ../../base
   - namespace.yaml
+  - secrets.yaml
+  - configmap.yaml
   # 시크릿 삭제
 
 patchesStrategicMerge:
