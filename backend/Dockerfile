@@ -1,10 +1,6 @@
 # 최적화된 백엔드 Dockerfile
 FROM python:3.12.0-slim AS base
 
-# 캐시 무효화
-ARG BUILD_DATE
-ENV BUILD_DATE=${BUILD_DATE}
-
 # 빌드 인수
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PIP_NO_CACHE_DIR=1
