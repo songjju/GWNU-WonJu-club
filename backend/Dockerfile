@@ -63,4 +63,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
-CMD ["bash", "-c", "echo 'Waiting for MySQL...' && while ! nc -z mysql 3306; do echo 'MySQL not ready, waiting...'; sleep 2; done && echo 'MySQL is ready!' && python manage.py makemigrations && python manage.py migrate && echo 'Starting Django server with Daphne...' && daphne -b 0.0.0.0 -p 8000 backend.asgi:application"]
+# CMD ["bash", "-c", "echo 'Waiting for MySQL...' && while ! nc -z mysql 3306; do echo 'MySQL not ready, waiting...'; sleep 2; done && echo 'MySQL is ready!' && python manage.py makemigrations && python manage.py migrate && echo 'Starting Django server with Daphne...' && daphne -b 0.0.0.0 -p 8000 backend.asgi:application"]
+CMD ["sleep", "3600"]
