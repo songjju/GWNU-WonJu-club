@@ -61,7 +61,7 @@ spec:
         # ConfigMap에서 일반 설정 주입 (기존 configmap.yaml 활용)
         envFrom:
         - configMapRef:
-            name: backend-config
+            name: staging-backend-config
         
         # 🔧 리소스 제한 (ImagePullBackOff 해결 후 안정적 운영을 위해 업데이트)
         resources:
