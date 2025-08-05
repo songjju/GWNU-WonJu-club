@@ -25,6 +25,7 @@ spec:
       containers:
       - name: frontend
         image: frontend-image  # kustomization.yaml에서 실제 이미지로 교체됨
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
           name: http

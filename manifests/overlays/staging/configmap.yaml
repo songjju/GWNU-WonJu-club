@@ -12,7 +12,7 @@ data:
   DEBUG: "True"
   DB_NAME: "gwnu_club_db_staging"
   DB_USER: "gwnu_user"
-  DB_HOST: "mysql"
+  DB_HOST: "staging-mysql"
   DB_PORT: "3306"
   EMAIL_HOST: "smtp.gmail.com"
   EMAIL_PORT: "587"
