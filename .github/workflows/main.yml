@@ -393,6 +393,7 @@ jobs:
           # cache-to: |
           #   type=gha,mode=max,scope=backend
           build-args: |
+            BUILD_DATE=${{ github.run_number }}
             BUILDKIT_INLINE_CACHE=1
             # 빌드 최적화 옵션
             DEBIAN_FRONTEND=noninteractive
@@ -420,6 +421,7 @@ jobs:
           #   type=gha,mode=max,scope=frontend-${{ hashFiles('frontend/package-lock.json') }}
           #   type=gha,mode=max,scope=frontend
           build-args: |
+            BUILD_DATE=${{ github.run_number }}
             BUILDKIT_INLINE_CACHE=1
             NODE_OPTIONS=--max_old_space_size=4096
             # 빌드 최적화 옵션

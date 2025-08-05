@@ -1,6 +1,10 @@
 # 가장 간단하고 강력한 Frontend Dockerfile
 FROM node:16-alpine AS builder
 
+# 캐시 무효화
+ARG BUILD_DATE
+ENV BUILD_DATE=${BUILD_DATE}
+
 WORKDIR /app
 
 # package.json 복사
