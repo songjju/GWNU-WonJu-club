@@ -28,7 +28,7 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: mysql-secrets
+              name: staging-mysql-secrets
               key: root-password
         - name: MYSQL_DATABASE
           value: "gwnu_club_db"
@@ -37,7 +37,7 @@ spec:
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: mysql-secrets
+              name: staging-mysql-secrets
               key: user-password
         volumeMounts:
         - name: mysql-storage

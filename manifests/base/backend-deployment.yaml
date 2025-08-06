@@ -26,7 +26,7 @@ spec:
         - name: SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: backend-secrets
+              name: staging-backend-secrets
               key: secret-key
         - name: DB_NAME
           value: "gwnu_club_db"
@@ -35,7 +35,7 @@ spec:
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: backend-secrets
+              name: staging-backend-secrets
               key: db-password
         - name: DB_HOST
           value: "mysql"
@@ -44,12 +44,12 @@ spec:
         - name: EMAIL_HOST_USER
           valueFrom:
             secretKeyRef:
-              name: backend-secrets
+              name: staging-backend-secrets
               key: email-host-user
         - name: EMAIL_HOST_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: backend-secrets
+              name: staging-backend-secrets
               key: email-host-password 
         - name: DEBUG
           value: "False"
