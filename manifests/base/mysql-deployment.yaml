@@ -45,8 +45,8 @@ spec:
         livenessProbe:
           exec:
             command:
-            - sh
-            - c
+            - /bin/bash
+            - -c
             - "mysqladmin ping -h localhost --silent"
           initialDelaySeconds: 60
           periodSeconds: 30
@@ -54,15 +54,12 @@ spec:
         readinessProbe:
           exec:
             command:
-            - mysqladmin
-            - ping
-            - -h
-            - localhost
-            - -u
-            - root
-            - -p$MYSQL_ROOT_PASSWORD
-          initialDelaySeconds: 5
-          periodSeconds: 5
+            - /bin/bash
+            - -c
+            - "mysql -h localhost -e 'SELECT 1'"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
         resources:
           requests:
             memory: "512Mi"
