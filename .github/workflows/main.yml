@@ -559,6 +559,7 @@ jobs:
           EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         run: |
           echo "🔐 Deploying secrets to ${ENVIRONMENT} environment..."
           
@@ -575,7 +576,7 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
           
           # Backend secrets
-          kubectl create secret generic backend-secrets \
+          kubectl create secret generic staging-backend-secrets \
             --from-literal=secret-key="${SECRET_KEY}" \
             --from-literal=email-host-user="${EMAIL_HOST_USER}" \
             --from-literal=email-host-password="${EMAIL_HOST_PASSWORD}" \
@@ -584,7 +585,7 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
           
           # MySQL secrets
-          kubectl create secret generic mysql-secrets \
+          kubectl create secret generic staging-mysql-secrets \
             --from-literal=root-password="${MYSQL_ROOT_PASSWORD}" \
             --from-literal=user-password="${DB_PASSWORD}" \
             --namespace="${NAMESPACE}" \
