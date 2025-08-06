@@ -569,7 +569,7 @@ jobs:
             --from-literal=DEBUG="True" \
             --from-literal=DB_NAME="gwnu_club_db_staging" \
             --from-literal=DB_USER="gwnu_user" \
-            --from-literal=DB_HOST="mysql" \
+            --from-literal=DB_HOST="staging-mysql" \
             --from-literal=DB_PORT="3306" \
             --namespace="${NAMESPACE}" \
             --dry-run=client -o yaml | kubectl apply -f -
