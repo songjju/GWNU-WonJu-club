@@ -36,14 +36,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY') or env('SECRET_KEY', default='fallback
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '0.0.0.0',
-    '192.168.0.14',  # 현재 사용 중인 IP
-    '192.168.0.4'
-]
-
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
 
 # Application definition
 
