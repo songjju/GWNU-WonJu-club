@@ -35,7 +35,7 @@ spec:
         - name: DEBUG
           value: "True"
         - name: ALLOWED_HOSTS
-          value: "staging.club-platform.local,localhost,127.0.0.1,10.244.0.*" # Pod IP 대역 추가
+          value: "staging.club-platform.local,localhost,127.0.0.1,10.244.0.*,0.0.0.0" # Pod IP 대역 추가
         - name: DB_HOST
           value: "staging-mysql"
         

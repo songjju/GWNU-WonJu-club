@@ -9,7 +9,7 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   rules:
-  - host: club-platform.local
+  - host: staging.club-platform.local
     http:
       paths:
       - path: /api
