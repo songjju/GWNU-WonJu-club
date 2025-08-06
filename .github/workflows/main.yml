@@ -610,12 +610,6 @@ jobs:
             # 임시로 이미지 태그 업데이트
             cd manifests/overlays/${ENVIRONMENT}
 
-            # 🔧 Secrets의 placeholder를 실제 값으로 교체
-            echo "🔧 Replacing secrets with actual values..."
-            sed -i "s/REPLACE_WITH_GITHUB_SECRET/${SECRET_KEY}/g" secrets.yaml
-            # 각 키별로 개별 교체는 복잡하므로 일단 모든 값을 SECRET_KEY로 통일
-            # 실제로는 각 키마다 다른 값이 필요하지만 임시 해결책
-
             # 🔧 문제가 되는 image-pull-secret.yaml 제거 (kubectl로 이미 생성했으므로)
             if [ -f "image-pull-secret.yaml" ]; then
               echo "🗑️ Removing problematic image-pull-secret.yaml (using kubectl-created secret instead)"
