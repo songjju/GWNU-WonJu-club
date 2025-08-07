@@ -50,7 +50,7 @@ spec:
             - 'mysqladmin ping -h localhost -u root -p"$MYSQL_ROOT_PASSWORD"'
           initialDelaySeconds: 60
           periodSeconds: 30
-          timeoutSeconds: 10
+          timeoutSeconds: 30
         readinessProbe:
           exec:
             command:
@@ -59,7 +59,7 @@ spec:
             - 'mysqladmin ping -h localhost -u root -p"$MYSQL_ROOT_PASSWORD"'
           initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 5
+          timeoutSeconds: 15
         resources:
           requests:
             memory: "512Mi"

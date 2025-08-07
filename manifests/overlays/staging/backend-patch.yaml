@@ -70,10 +70,10 @@ spec:
         # 🔧 리소스 제한 (ImagePullBackOff 해결 후 안정적 운영을 위해 업데이트)
         resources:
           requests:
-            memory: "256Mi"  # 128Mi → 256Mi로 증가
+            memory: "512Mi"  # 128Mi → 256Mi로 증가
             cpu: "250m"      # 100m → 250m으로 증가
           limits:
-            memory: "512Mi"  # 256Mi → 512Mi로 증가
+            memory: "1Gi"  # 256Mi → 512Mi로 증가
             cpu: "500m"      # 250m → 500m으로 증가
         
         # 🏥 Health Check 추가 (서비스 안정성 향상)
