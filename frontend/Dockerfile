@@ -7,12 +7,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # 가장 기본적인 npm 설치 (옵션 최소화)
-RUN npm install
+RUN npm ci
 
 # 소스 코드 복사
 COPY . .
 
 # 빌드 환경변수 설정
+ENV CI=true
 ENV GENERATE_SOURCEMAP=false
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 
