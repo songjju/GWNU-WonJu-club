@@ -18,10 +18,10 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf.urls.static import static
 from django.conf import settings
-from django.http import JsonResponse
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from health.views import health_check, readiness_check
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -34,15 +34,9 @@ schema_view = get_schema_view(
 
 )
 
-def health_check(request):
-    return JsonResponse({"status": "healthy"})
-
-def readiness_check(request):
-    return JsonResponse({"status": "ready"})
-
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('health/', health_check, name='health'),
+    path('health/', health_check, name='health'),     # /health/
     path('ready/', readiness_check, name='ready'),
     path('api-auth', include('rest_framework.urls')),
     path('club_introduce/', include('club_introduce.urls')),
