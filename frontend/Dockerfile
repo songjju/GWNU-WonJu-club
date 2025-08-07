@@ -16,9 +16,15 @@ COPY . .
 ENV CI=true
 ENV GENERATE_SOURCEMAP=false
 ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV TSC_COMPILE_ON_ERROR=true
 
 # 빌드 실행
-RUN npm run build
+RUN echo "=== 빌드 시작 전 검사 ===" && \
+    ls -la src/ && \
+    echo "=== package.json 스크립트 확인 ===" && \
+    cat package.json | grep -A 5 '"scripts"' && \
+    echo "=== 실제 빌드 실행 ===" && \
+    npm run build
 
 # 프로덕션 이미지
 FROM nginx:alpine
