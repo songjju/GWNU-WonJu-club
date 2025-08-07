@@ -47,7 +47,7 @@ spec:
             command:
             - /bin/bash
             - -c
-            - "mysqladmin ping -h localhost --silent"
+            - 'mysqladmin ping -h localhost -u root -p"$MYSQL_ROOT_PASSWORD"'
           initialDelaySeconds: 60
           periodSeconds: 30
           timeoutSeconds: 10
@@ -56,7 +56,7 @@ spec:
             command:
             - /bin/bash
             - -c
-            - "mysql -h localhost -e 'SELECT 1'"
+            - 'mysqladmin ping -h localhost -u root -p"$MYSQL_ROOT_PASSWORD"'
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
