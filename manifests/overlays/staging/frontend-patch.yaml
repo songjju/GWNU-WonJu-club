@@ -59,8 +59,8 @@ spec:
             port: 3000
           initialDelaySeconds: 60
           periodSeconds: 30
-          timeoutSeconds: 10
-          failureThreshold: 3
+          timeoutSeconds: 30
+          failureThreshold: 5
         
         readinessProbe:
           httpGet:
@@ -68,8 +68,8 @@ spec:
             port: 3000
           initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
+          timeoutSeconds: 15
+          failureThreshold: 5
         
         # 보안 컨텍스트
         securityContext:
