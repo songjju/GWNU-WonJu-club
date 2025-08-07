@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # 가장 기본적인 npm 설치 (옵션 최소화)
-RUN npm ci
+RUN npm install 
 
 # 소스 코드 복사
 COPY . .
