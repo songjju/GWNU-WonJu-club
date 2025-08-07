@@ -17,7 +17,7 @@ ENV GENERATE_SOURCEMAP=false
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 
 # 빌드 실행
-RUN npm run build || (echo "Build failed, creating basic app" && mkdir -p build && echo '<h1>App Running</h1>' > build/index.html)
+RUN npm run build
 
 # 프로덕션 이미지
 FROM nginx:alpine
