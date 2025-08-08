@@ -32,8 +32,8 @@ FROM nginx:alpine
 # 빌드 결과 복사
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# 포트 변경
-RUN sed -i 's/80/3000/g' /etc/nginx/conf.d/default.conf
+# 커스텀 nginx 설정 파일 복사 (포트 3000으로 수정된 버전)
+COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 3000
 
