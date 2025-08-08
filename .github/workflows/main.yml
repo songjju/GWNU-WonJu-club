@@ -122,7 +122,7 @@ jobs:
           cache-to: type=gha,scope=frontend
           platforms: linux/amd64
 
-  # 🚀 간소화된 배포
+  # 🚀 진단 및 배포
   deploy:
     name: 🚀 Deploy
     runs-on: self-hosted
@@ -132,6 +132,46 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+
+      - name: 🔍 클러스터 정보 확인
+        run: |
+          echo "==================== 🔍 클러스터 진단 시작 ===================="
+          
+          # 현재 kubectl context 확인
+          echo "📋 현재 kubectl context:"
+          kubectl config current-context || echo "❌ kubectl context 없음"
+          
+          # 사용 가능한 모든 context 확인
+          echo ""
+          echo "📋 사용 가능한 모든 contexts:"
+          kubectl config get-contexts || echo "❌ contexts 조회 실패"
+          
+          # 클러스터 정보
+          echo ""
+          echo "🔗 클러스터 정보:"
+          kubectl cluster-info || echo "❌ 클러스터 정보 조회 실패"
+          
+          # 현재 네임스페이스 확인
+          echo ""
+          echo "📦 현재 네임스페이스:"
+          kubectl config view --minify --output 'jsonpath={..namespace}' || echo "default"
+          
+          # 모든 네임스페이스 조회
+          echo ""
+          echo "📦 모든 네임스페이스:"
+          kubectl get namespaces || echo "❌ 네임스페이스 조회 실패"
+          
+          # club-platform-staging 네임스페이스 확인
+          echo ""
+          echo "🎯 club-platform-staging 네임스페이스 상태:"
+          kubectl get namespace club-platform-staging || echo "❌ club-platform-staging 없음"
+          
+          # 기존 시크릿 확인
+          echo ""
+          echo "🔑 club-platform-staging의 기존 시크릿들:"
+          kubectl get secrets -n club-platform-staging || echo "❌ 네임스페이스 없거나 시크릿 없음"
+          
+          echo "==================== 🔍 클러스터 진단 완료 ===================="
 
       - name: 🔑 Create secrets
         env:
@@ -143,137 +183,88 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         run: |
-          echo "🔐 시크릿 생성 시작..."
-          echo "네임스페이스: ${NAMESPACE}"
+          echo "==================== 🔐 시크릿 생성 시작 ===================="
+          echo "🎯 타겟 네임스페이스: ${NAMESPACE}"
+          echo "🌟 브랜치 이름: ${{ github.ref_name }}"
           
-          # 네임스페이스 생성 (실제 명령어)
-          kubectl create namespace ${NAMESPACE} || echo "네임스페이스 이미 존재"
+          # 환경변수 확인 (값은 숨김)
+          echo "🔐 환경변수 존재 확인:"
+          [ -n "$SECRET_KEY" ] && echo "  ✅ SECRET_KEY 설정됨 (${#SECRET_KEY} 문자)" || echo "  ❌ SECRET_KEY 비어있음"
+          [ -n "$EMAIL_HOST_USER" ] && echo "  ✅ EMAIL_HOST_USER 설정됨" || echo "  ❌ EMAIL_HOST_USER 비어있음"
+          [ -n "$EMAIL_HOST_PASSWORD" ] && echo "  ✅ EMAIL_HOST_PASSWORD 설정됨" || echo "  ❌ EMAIL_HOST_PASSWORD 비어있음"
+          [ -n "$DB_PASSWORD" ] && echo "  ✅ DB_PASSWORD 설정됨" || echo "  ❌ DB_PASSWORD 비어있음"
+          [ -n "$MYSQL_ROOT_PASSWORD" ] && echo "  ✅ MYSQL_ROOT_PASSWORD 설정됨" || echo "  ❌ MYSQL_ROOT_PASSWORD 비어있음"
           
-          # 🔥 핵심 수정: --dry-run 완전 제거하고 직접 생성/교체
+          # 네임스페이스 생성 (자세한 로그)
+          echo ""
+          echo "📦 네임스페이스 생성/확인 중..."
+          if kubectl get namespace "${NAMESPACE}" >/dev/null 2>&1; then
+            echo "  ✅ 네임스페이스 ${NAMESPACE} 이미 존재함"
+          else
+            echo "  🆕 네임스페이스 ${NAMESPACE} 생성 중..."
+            kubectl create namespace "${NAMESPACE}" && echo "  ✅ 네임스페이스 생성 성공" || echo "  ❌ 네임스페이스 생성 실패"
+          fi
           
-          # ImagePullSecret 삭제 후 재생성
-          kubectl delete secret ghcr-secret -n "${NAMESPACE}" || echo "ghcr-secret 없음, 새로 생성"
+          # 각 시크릿을 개별적으로 생성하고 확인
+          echo ""
+          echo "🔑 ImagePullSecret 생성 중..."
+          if kubectl get secret ghcr-secret -n "${NAMESPACE}" >/dev/null 2>&1; then
+            echo "  🗑️ 기존 ghcr-secret 삭제 중..."
+            kubectl delete secret ghcr-secret -n "${NAMESPACE}"
+          fi
           kubectl create secret docker-registry ghcr-secret \
             --docker-server=ghcr.io \
             --docker-username="${{ github.actor }}" \
             --docker-password="${{ secrets.GITOPS_TOKEN }}" \
-            --namespace="${NAMESPACE}"
-          echo "✅ ghcr-secret 생성됨"
+            --namespace="${NAMESPACE}" && echo "  ✅ ghcr-secret 생성 성공" || echo "  ❌ ghcr-secret 생성 실패"
           
-          # Backend secrets 삭제 후 재생성
-          kubectl delete secret backend-secrets -n "${NAMESPACE}" || echo "backend-secrets 없음, 새로 생성"
+          echo ""
+          echo "🔑 Backend secrets 생성 중..."
+          if kubectl get secret backend-secrets -n "${NAMESPACE}" >/dev/null 2>&1; then
+            echo "  🗑️ 기존 backend-secrets 삭제 중..."
+            kubectl delete secret backend-secrets -n "${NAMESPACE}"
+          fi
           kubectl create secret generic backend-secrets \
             --from-literal=secret-key="${SECRET_KEY}" \
             --from-literal=email-host-user="${EMAIL_HOST_USER}" \
             --from-literal=email-host-password="${EMAIL_HOST_PASSWORD}" \
             --from-literal=db-password="${DB_PASSWORD}" \
-            --namespace="${NAMESPACE}"
-          echo "✅ backend-secrets 생성됨"
+            --namespace="${NAMESPACE}" && echo "  ✅ backend-secrets 생성 성공" || echo "  ❌ backend-secrets 생성 실패"
           
-          # MySQL secrets 삭제 후 재생성
-          kubectl delete secret mysql-secrets -n "${NAMESPACE}" || echo "mysql-secrets 없음, 새로 생성"
+          echo ""
+          echo "🔑 MySQL secrets 생성 중..."
+          if kubectl get secret mysql-secrets -n "${NAMESPACE}" >/dev/null 2>&1; then
+            echo "  🗑️ 기존 mysql-secrets 삭제 중..."
+            kubectl delete secret mysql-secrets -n "${NAMESPACE}"
+          fi
           kubectl create secret generic mysql-secrets \
             --from-literal=root-password="${MYSQL_ROOT_PASSWORD}" \
             --from-literal=user-password="${DB_PASSWORD}" \
-            --namespace="${NAMESPACE}"
-          echo "✅ mysql-secrets 생성됨"
+            --namespace="${NAMESPACE}" && echo "  ✅ mysql-secrets 생성 성공" || echo "  ❌ mysql-secrets 생성 실패"
           
-          # 생성 확인
-          echo "🔍 생성된 시크릿 목록:"
-          kubectl get secrets -n "${NAMESPACE}"
+          # 최종 확인
+          echo ""
+          echo "🔍 생성 결과 확인:"
+          kubectl get secrets -n "${NAMESPACE}" || echo "  ❌ 시크릿 조회 실패"
           
-          echo "✅ 모든 시크릿이 성공적으로 생성되었습니다!"
+          # 각 시크릿의 세부 정보 확인
+          echo ""
+          echo "🔍 각 시크릿 상세 확인:"
+          for secret in ghcr-secret backend-secrets mysql-secrets; do
+            if kubectl get secret "${secret}" -n "${NAMESPACE}" >/dev/null 2>&1; then
+              echo "  ✅ ${secret} 존재 확인"
+              kubectl get secret "${secret}" -n "${NAMESPACE}" -o jsonpath='{.metadata.name}: {.data}' | head -c 100
+              echo ""
+            else
+              echo "  ❌ ${secret} 존재하지 않음"
+            fi
+          done
+          
+          echo "==================== 🔐 시크릿 생성 완료 ===================="
 
       - name: 🚀 Deploy apps
         env:
           NAMESPACE: "club-platform-${{ github.ref_name }}"
         run: |
-          # 간단한 직접 배포 (Kustomize 제거로 시간 절약)
-          cat <<EOF | kubectl apply -f -
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: backend
-            namespace: ${NAMESPACE}
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: backend
-            template:
-              metadata:
-                labels:
-                  app: backend
-              spec:
-                imagePullSecrets:
-                - name: ghcr-secret
-                containers:
-                - name: backend
-                  image: ${{ needs.build.outputs.backend-image }}
-                  ports:
-                  - containerPort: 8000
-                  env:
-                  - name: SECRET_KEY
-                    valueFrom:
-                      secretKeyRef:
-                        name: backend-secrets
-                        key: secret-key
-                  - name: DB_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        name: backend-secrets
-                        key: db-password
-                  - name: DB_HOST
-                    value: "mysql-service"
-                  - name: DB_NAME
-                    value: "gwnu_club_db"
-                  - name: DB_USER
-                    value: "gwnu_user"
-          ---
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: backend-service
-            namespace: ${NAMESPACE}
-          spec:
-            selector:
-              app: backend
-            ports:
-            - port: 8000
-          ---
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: frontend
-            namespace: ${NAMESPACE}
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: frontend
-            template:
-              metadata:
-                labels:
-                  app: frontend
-              spec:
-                imagePullSecrets:
-                - name: ghcr-secret
-                containers:
-                - name: frontend
-                  image: ${{ needs.build.outputs.frontend-image }}
-                  ports:
-                  - containerPort: 3000
-          ---
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: frontend-service
-            namespace: ${NAMESPACE}
-          spec:
-            selector:
-              app: frontend
-            ports:
-            - port: 3000
-          EOF
-
-          echo "✅ 배포 완료"
+          echo "🚀 애플리케이션 배포는 스킵 (시크릿 생성 테스트용)"
+          echo "✅ 배포 스킵됨"
