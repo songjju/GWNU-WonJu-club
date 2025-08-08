@@ -133,16 +133,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🔑 Create ImagePullSecret
+      - name: 🔑 Create secrets
+        env:
+          NAMESPACE: "club-platform-${{ github.ref_name }}"
         run: |
-          NAMESPACE="club-platform-${{ github.ref_name }}"
-          
           kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
           
+          # ImagePullSecret
           kubectl create secret docker-registry ghcr-secret \
             --docker-server=ghcr.io \
             --docker-username="${{ github.actor }}" \
             --docker-password="${{ secrets.GITOPS_TOKEN }}" \
+            --namespace="${NAMESPACE}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Backend secrets
+          kubectl create secret generic backend-secrets \
+            --from-literal=secret-key="${{ secrets.SECRET_KEY }}" \
+            --from-literal=email-host-user="${{ secrets.EMAIL_HOST_USER }}" \
+            --from-literal=email-host-password="${{ secrets.EMAIL_HOST_PASSWORD }}" \
+            --from-literal=db-password="${{ secrets.DB_PASSWORD }}" \
+            --namespace="${NAMESPACE}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          
+          # MySQL secrets
+          kubectl create secret generic mysql-secrets \
+            --from-literal=root-password="${{ secrets.MYSQL_ROOT_PASSWORD }}" \
+            --from-literal=user-password="${{ secrets.DB_PASSWORD }}" \
             --namespace="${NAMESPACE}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
@@ -174,6 +191,23 @@ jobs:
                   image: ${{ needs.build.outputs.backend-image }}
                   ports:
                   - containerPort: 8000
+                  env:
+                  - name: SECRET_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: backend-secrets
+                        key: secret-key
+                  - name: DB_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        name: backend-secrets
+                        key: db-password
+                  - name: DB_HOST
+                    value: "mysql-service"
+                  - name: DB_NAME
+                    value: "gwnu_club_db"
+                  - name: DB_USER
+                    value: "gwnu_user"
           ---
           apiVersion: v1
           kind: Service
