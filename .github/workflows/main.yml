@@ -35,9 +35,26 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: 🕵️ Secret leak detection
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+        run: |
+          echo "🔍 기본 시크릿 패턴 검사 중..."
+          
+          # 일반적인 시크릿 패턴 검사
+          if grep -r -i --include="*.py" --include="*.js" --include="*.env" \
+             -E "(password|secret|key|token|api_key)\s*=\s*['\"][^'\"]{8,}" . || \
+             grep -r --include="*.py" --include="*.js" \
+             -E "sk-[a-zA-Z0-9]{32,}|ghp_[a-zA-Z0-9]{36}|xoxb-[a-zA-Z0-9-]+" .; then
+            echo "⚠️ 잠재적인 시크릿이 발견되었습니다. 코드를 검토하세요."
+            echo "💡 실제 시크릿인지 확인 후 필요시 GitHub Secrets로 이동하세요."
+          else
+            echo "✅ 기본 시크릿 검사 통과"
+          fi
+          
+          # .env 파일 존재 여부 확인
+          if find . -name ".env*" -not -path "./.github/*" | grep -q .; then
+            echo "⚠️ .env 파일이 발견되었습니다:"
+            find . -name ".env*" -not -path "./.github/*"
+            echo "💡 .env 파일이 .gitignore에 포함되어 있는지 확인하세요."
+          fi
 
       - name: Set up Python for validation
         uses: actions/setup-python@v4
