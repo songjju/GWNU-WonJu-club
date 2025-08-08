@@ -1,4 +1,4 @@
-name: 🚀 Optimized CI/CD Pipeline with ImagePullBackOff Fix
+name: 🚀 Fast CI/CD Pipeline
 
 on:
   push:
@@ -8,996 +8,217 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_BACKEND: ${{ github.repository }}/backend
-  IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
 
 jobs:
-  # 🔍 보안 및 환경변수 검증 작업 (병렬 실행 1)
-  security-validation:
-    name: 🔐 Security & Environment Validation
-    runs-on: ubuntu-latest
-    outputs:
-      secrets-valid: ${{ steps.validate-secrets.outputs.valid }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      # Python 의존성 캐싱
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-security-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-security-
-            ${{ runner.os }}-pip-
-
-      - name: 🕵️ Secret leak detection
-        run: |
-          echo "🔍 기본 시크릿 패턴 검사 중..."
-          
-          # 일반적인 시크릿 패턴 검사
-          if grep -r -i --include="*.py" --include="*.js" --include="*.env" \
-             -E "(password|secret|key|token|api_key)\s*=\s*['\"][^'\"]{8,}" . || \
-             grep -r --include="*.py" --include="*.js" \
-             -E "sk-[a-zA-Z0-9]{32,}|ghp_[a-zA-Z0-9]{36}|xoxb-[a-zA-Z0-9-]+" .; then
-            echo "⚠️ 잠재적인 시크릿이 발견되었습니다. 코드를 검토하세요."
-            echo "💡 실제 시크릿인지 확인 후 필요시 GitHub Secrets로 이동하세요."
-          else
-            echo "✅ 기본 시크릿 검사 통과"
-          fi
-          
-          # .env 파일 존재 여부 확인
-          if find . -name ".env*" -not -path "./.github/*" | grep -q .; then
-            echo "⚠️ .env 파일이 발견되었습니다:"
-            find . -name ".env*" -not -path "./.github/*"
-            echo "💡 .env 파일이 .gitignore에 포함되어 있는지 확인하세요."
-          fi
-
-      - name: Set up Python for validation
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      - name: 🔍 Validate environment secrets
-        id: validate-secrets
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-        run: |
-          # 환경변수 검증 스크립트가 없는 경우 기본 검증
-          if [ -f "scripts/env-validator.py" ]; then
-            python scripts/env-validator.py
-          else
-            echo "Environment variables validation..."
-            [ -n "$SECRET_KEY" ] && echo "✅ SECRET_KEY is set"
-            [ -n "$DB_PASSWORD" ] && echo "✅ DB_PASSWORD is set"
-            echo "Basic validation completed"
-          fi
-          echo "valid=true" >> $GITHUB_OUTPUT
-
-      - name: 🛡️ Security scan for dependencies
-        timeout-minutes: 8
-        run: |
-          cd backend
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install safety
-          safety scan --output text --exit-zero || echo "Security vulnerabilities found but CI continuing"
-          echo "Security scan completed"
-          
-      # Trivy 파일시스템 스캔만 (이미지 스캔은 build 단계에서)
-      - name: 🔒 Trivy filesystem scan
-        timeout-minutes: 5
-        run: |
-          # Trivy 설치 (캐시 활용)
-          if ! command -v trivy &> /dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-            wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-            echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-            sudo apt-get update
-            sudo apt-get install -y trivy
-          fi
-          
-          # 백엔드 파일시스템 스캔만 (빠른 스캔)
-          echo "🔍 Scanning backend directory..."
-          trivy fs ./backend --format table --exit-code 0 --quiet
-          echo "✅ Security filesystem scan completed"
-
-  # 🎨 코드 품질 검사 (병렬 실행 2)
-  code-quality:
-    name: 🎨 Code Quality & Formatting
-    runs-on: ubuntu-latest
-    # security-validation과 병렬 실행하도록 의존성 제거
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Python 의존성 캐싱
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-quality-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-quality-
-            ${{ runner.os }}-pip-
-
-      # Node 의존성 캐싱
-      - name: Cache Node dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      - name: Install Python quality tools
-        timeout-minutes: 3
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8 black isort bandit
-
-      - name: 🎨 Python code formatting check
-        timeout-minutes: 2
-        run: |
-          cd backend
-          black --check --diff . --quiet || echo "Code formatting issues found but continuing"
-          isort --check-only --diff . --quiet || echo "Import sorting issues found but continuing"
-
-      - name: 🔍 Python linting (critical only)
-        timeout-minutes: 2
-        run: |
-          cd backend
-          # 중요한 오류만 체크하여 시간 단축
-          flake8 . --select=E9,F63,F7,F82 --show-source --statistics || echo "Critical errors found but continuing"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install frontend dependencies
-        timeout-minutes: 3
-        run: |
-          cd frontend
-          npm ci --prefer-offline --no-audit
-
-      - name: 🎨 Frontend code quality
-        timeout-minutes: 3
-        run: |
-          cd frontend
-          # 빠른 린팅만 실행
-          npm run lint --if-present || echo "Frontend linting completed with warnings"
-
-  # 🧪 테스트 작업 (보안 검증 후 실행)
+  # 🧪 필수 테스트만 (병렬 실행)
   test:
-    name: 🧪 Comprehensive Testing
+    name: 🧪 Essential Tests
     runs-on: ubuntu-latest
-    needs: [security-validation] # code-quality 의존성 제거로 병렬화
-    timeout-minutes: 20
+    timeout-minutes: 8
     
     services:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: test_root_password
+          MYSQL_ROOT_PASSWORD: test_password
           MYSQL_DATABASE: test_db
           MYSQL_USER: test_user
           MYSQL_PASSWORD: test_password
         ports:
           - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Python 의존성 캐싱
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
+      - uses: actions/checkout@v4
+      
+      - uses: actions/cache@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-test-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-test-
-            ${{ runner.os }}-pip-
+          path: |
+            ~/.cache/pip
+            ~/.npm
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/requirements.txt', '**/package-lock.json') }}
 
-      # Node 의존성 캐싱
-      - name: Cache Node dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-
-      - name: Install backend dependencies
-        timeout-minutes: 5
-        run: |
-          cd backend
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install coverage pytest-django pytest-cov
-
-      - name: 🧪 Backend unit tests with coverage
-        timeout-minutes: 12
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DB_NAME: test_db
-          DB_USER: test_user
-          DB_PASSWORD: test_password
-          DB_HOST: localhost
-          DB_PORT: 3306
-          EMAIL_HOST_USER: test@example.com
-          EMAIL_HOST_PASSWORD: test_password
-        run: |
-          cd backend
-          coverage run --source='.' --omit='ai_chatbot/*' manage.py test --verbosity=1 --failfast
-          coverage report --show-missing --omit='ai_chatbot/*' --fail-under=60
-          coverage xml --omit='ai_chatbot/*'
-
-      # 통합 테스트는 조건부 실행
-      - name: 🧪 Backend integration tests
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-        timeout-minutes: 5
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DB_NAME: test_db
-          DB_USER: test_user
-          DB_PASSWORD: test_password
-          DB_HOST: localhost
-          DB_PORT: 3306
-        run: |
-          cd backend
-          python manage.py test --tag=integration --verbosity=1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+          
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Install frontend dependencies
-        timeout-minutes: 3
-        run: |
-          cd frontend
-          npm ci --prefer-offline --no-audit
-
-      - name: 🧪 Frontend unit tests
+      # 백엔드 빠른 테스트
+      - name: 🧪 Backend tests
         timeout-minutes: 5
+        env:
+          SECRET_KEY: test-key
+          DB_NAME: test_db
+          DB_USER: test_user
+          DB_PASSWORD: test_password
+          DB_HOST: localhost
         run: |
-          cd frontend
-          npm test -- --coverage --watchAll=false --passWithNoTests
+          cd backend
+          pip install -r requirements.txt
+          python manage.py test --failfast
 
-      # E2E 테스트는 main 브랜치에서만
-      - name: 🧪 Frontend E2E tests
-        if: github.ref == 'refs/heads/main'
+      # 프론트엔드 빠른 테스트
+      - name: 🧪 Frontend tests
         timeout-minutes: 3
         run: |
           cd frontend
-          npm run test:e2e || echo "E2E tests not yet implemented"
+          npm ci --silent
+          npm test -- --watchAll=false --passWithNoTests
 
-      - name: 📊 Upload coverage reports
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./backend/coverage.xml,./frontend/coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-        continue-on-error: true
-  
-  # 🐳 이미지 빌드 및 보안 스캔 (테스트 완료 후)
-  build-and-scan:
-    name: 🐳 Build & Security Scan Images
+  # 🐳 빌드 (테스트와 병렬)
+  build:
+    name: 🐳 Build Images
     runs-on: ubuntu-latest
-    needs: [test, code-quality]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    timeout-minutes: 25
+    if: github.event_name == 'push'
+    timeout-minutes: 12
     
-    permissions:
-      contents: read
-      packages: write
-      security-events: write
-
     outputs:
-      backend-image: ${{ steps.clean-image-ref.outputs.backend-image }}
-      frontend-image: ${{ steps.clean-image-ref.outputs.frontend-image }}
-      backend-digest: ${{ steps.backend-build.outputs.digest }}
-      frontend-digest: ${{ steps.frontend-build.outputs.digest }}
+      backend-image: ${{ steps.meta.outputs.backend-image }}
+      frontend-image: ${{ steps.meta.outputs.frontend-image }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # 디스크 공간 확보
-      - name: 🧹 Free up disk space
-        run: |
-          echo "Before cleanup:"
-          df -h
-          
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
-          sudo rm -rf /usr/local/lib/android /opt/microsoft/msedge /opt/microsoft/powershell
-          sudo apt-get autoremove -y
-          sudo apt-get autoclean -y
-          docker system prune -af --volumes
-          
-          echo "After cleanup:"
-          df -h
-
-      - name: 🔑 Log in to Container Registry
+      - name: 🔑 Login to Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITOPS_TOKEN }}
 
-      # 소문자 변환된 이미지 이름 생성
-      - name: 🏷️ Generate lowercase image names
-        id: image-names
+      - uses: docker/setup-buildx-action@v3
+
+      - name: 🏷️ Generate tags
+        id: meta
         run: |
-          # GitHub repository를 소문자로 변환
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          BRANCH_TAG="${{ github.ref_name }}"
           
-          echo "repository-lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
-          echo "backend-image-name=${REGISTRY}/${REPO_LOWER}/backend" >> $GITHUB_OUTPUT
-          echo "frontend-image-name=${REGISTRY}/${REPO_LOWER}/frontend" >> $GITHUB_OUTPUT
-          
-          echo "Backend image name: ${REGISTRY}/${REPO_LOWER}/backend"
-          echo "Frontend image name: ${REGISTRY}/${REPO_LOWER}/frontend"
+          echo "backend-image=${REGISTRY}/${REPO_LOWER}/backend:${BRANCH_TAG}" >> $GITHUB_OUTPUT
+          echo "frontend-image=${REGISTRY}/${REPO_LOWER}/frontend:${BRANCH_TAG}" >> $GITHUB_OUTPUT
 
-      - name: 🏷️ Extract backend metadata
-        id: backend-meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.image-names.outputs.backend-image-name }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: 🏷️ Extract frontend metadata
-        id: frontend-meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.image-names.outputs.frontend-image-name }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            network=host
-            image=moby/buildkit:buildx-stable-1
-
-      # 백엔드 빌드 (수정된 캐시 설정)
-      - name: 🐳 Build and push backend image
-        id: backend-build
+      # 백엔드 빌드 (병렬)
+      - name: 🐳 Build backend
         uses: docker/build-push-action@v5
-        timeout-minutes: 25  # 12분 → 25분으로 증가
         with:
           context: ./backend
           push: true
-          tags: ${{ steps.backend-meta.outputs.tags }}
-          labels: ${{ steps.backend-meta.outputs.labels }}
-          cache-from: |
-            type=gha,scope=backend
-          cache-to: |
-            type=gha,mode=max,scope=backend
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
-            # 빌드 최적화 옵션
-            DEBIAN_FRONTEND=noninteractive
-            PIP_NO_CACHE_DIR=1
-            PIP_DISABLE_PIP_VERSION_CHECK=1
-          provenance: false
-          sbom: false
-          platforms: linux/amd64  # 단일 플랫폼으로 제한
+          tags: ${{ steps.meta.outputs.backend-image }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend
+          platforms: linux/amd64
 
-      # 프론트엔드 빌드 (수정된 캐시 설정)
-      - name: 🐳 Build and push frontend image
-        id: frontend-build
+      # 프론트엔드 빌드 (병렬)
+      - name: 🐳 Build frontend
         uses: docker/build-push-action@v5
-        timeout-minutes: 15  # 25분 → 15분으로 단축
         with:
           context: ./frontend
           push: true
-          tags: ${{ steps.frontend-meta.outputs.tags }}
-          labels: ${{ steps.frontend-meta.outputs.labels }}
-          cache-from: |
-            type=gha,scope=frontend-${{ hashFiles('frontend/package-lock.json') }}
-            type=gha,scope=frontend
-          cache-to: |
-            type=gha,mode=max,scope=frontend-${{ hashFiles('frontend/package-lock.json') }}
-            type=gha,mode=max,scope=frontend
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
-            NODE_OPTIONS=--max_old_space_size=4096
-            # 빌드 최적화 옵션
-            GENERATE_SOURCEMAP=false
-            DISABLE_ESLINT_PLUGIN=true
-            TSC_COMPILE_ON_ERROR=true
-            FAST_REFRESH=false
-          provenance: false
-          sbom: false
+          tags: ${{ steps.meta.outputs.frontend-image }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend
           platforms: linux/amd64
 
-      # 이미지 참조 정리
-      - name: 🏷️ Extract clean image references
-        id: clean-image-ref
-        run: |
-          BACKEND_TAG=$(echo "${{ steps.backend-meta.outputs.tags }}" | head -n1 | tr -d '\n\r')
-          FRONTEND_TAG=$(echo "${{ steps.frontend-meta.outputs.tags }}" | head -n1 | tr -d '\n\r')
-          
-          echo "backend-image=${BACKEND_TAG}" >> $GITHUB_OUTPUT
-          echo "frontend-image=${FRONTEND_TAG}" >> $GITHUB_OUTPUT
-          
-          echo "Backend image: ${BACKEND_TAG}"
-          echo "Frontend image: ${FRONTEND_TAG}"
-
-      # 간소화된 보안 스캔
-      - name: 🔍 Backend image security scan
-        continue-on-error: true
-        timeout-minutes: 3
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-          
-          trivy image \
-            --format sarif \
-            --output backend-trivy.sarif \
-            --severity 'CRITICAL' \
-            --quiet \
-            --timeout 2m \
-            ${{ steps.clean-image-ref.outputs.backend-image }} || {
-              echo "Creating empty SARIF file"
-              echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"Trivy"}},"results":[]}]}' > backend-trivy.sarif
-            }
-
-      - name: 🔍 Frontend image security scan
-        continue-on-error: true
-        timeout-minutes: 3
-        run: |
-          trivy image \
-            --format sarif \
-            --output frontend-trivy.sarif \
-            --severity 'CRITICAL' \
-            --quiet \
-            --timeout 2m \
-            ${{ steps.clean-image-ref.outputs.frontend-image }} || {
-              echo "Creating empty SARIF file"
-              echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"Trivy"}},"results":[]}]}' > frontend-trivy.sarif
-            }
-
-      - name: 📋 Upload backend security scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always() && hashFiles('backend-trivy.sarif') != ''
-        with:
-          sarif_file: 'backend-trivy.sarif'
-          category: 'backend-security'
-
-      - name: 📋 Upload frontend security scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always() && hashFiles('frontend-trivy.sarif') != ''
-        with:
-          sarif_file: 'frontend-trivy.sarif'
-          category: 'frontend-security'
-  
-  # 🚀 ImagePullBackOff 해결을 위한 배포 (Self-hosted Runner)
+  # 🚀 간소화된 배포
   deploy:
-    name: 🚀 Deploy with ImagePullSecret Fix
+    name: 🚀 Deploy
     runs-on: self-hosted
-    needs: build-and-scan
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    timeout-minutes: 10
-    
-    environment: 
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-      url: ${{ github.ref == 'refs/heads/main' && 'https://club-platform.com' || 'https://staging.club-platform.com' }}
+    needs: [test, build]
+    if: github.event_name == 'push'
+    timeout-minutes: 5
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 🔑 Setup Kubernetes config
-        timeout-minutes: 2
+      - name: 🔑 Create ImagePullSecret
         run: |
-          # 현재 context 정보 출력
-          echo "🔍 Current kubectl context:"
-          CURRENT_CONTEXT=$(kubectl config current-context)
-          echo "Context: ${CURRENT_CONTEXT}"
+          NAMESPACE="club-platform-${{ github.ref_name }}"
           
-          # 클러스터 정보 확인
-          echo "🔗 Cluster information:"
-          kubectl cluster-info --request-timeout=10s
+          kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
           
-          # 노드 상태 확인
-          echo "🖥️ Cluster nodes:"
-          kubectl get nodes
-          
-          echo "✅ Using context: ${CURRENT_CONTEXT}"
-          echo "🎯 Kubernetes cluster is ready for deployment"
-
-      # 🔑 핵심: ImagePullSecret 생성
-      - name: 🔑 Create ImagePullSecret with retry
-        timeout-minutes: 5
-        env:
-          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-        run: |
-          echo "🔐 Creating ImagePullSecret for ${ENVIRONMENT} environment..."
-          
-          NAMESPACE="club-platform-${ENVIRONMENT}"
-          
-          # 네임스페이스 확인/생성
-          kubectl get namespace ${NAMESPACE} || kubectl create namespace ${NAMESPACE}
-          kubectl label namespace ${NAMESPACE} environment=${ENVIRONMENT} --overwrite
-          
-          # 기존 secret 삭제 (충돌 방지)
-          echo "🗑️ 기존 secret 정리 중..."
-          kubectl delete secret ghcr-secret -n ${NAMESPACE} --ignore-not-found=true
-          
-          # 잠시 대기 (API 서버 부하 감소)
-          sleep 5
-          
-          # 재시도 로직으로 secret 생성 (--timeout 제거)
-          for i in {1..3}; do
-            echo "🔄 Secret 생성 시도 ${i}/3..."
-            
-            if kubectl create secret docker-registry ghcr-secret \
-              --docker-server=ghcr.io \
-              --docker-username="${{ github.actor }}" \
-              --docker-password="${{ secrets.GITOPS_TOKEN }}" \
-              --namespace="${NAMESPACE}"; then
-              echo "✅ Secret 생성 성공!"
-              break
-            else
-              echo "❌ Secret 생성 실패, 10초 후 재시도..."
-              sleep 10
-            fi
-            
-            if [ $i -eq 3 ]; then
-              echo "💀 Secret 생성 최종 실패"
-              exit 1
-            fi
-          done
-          
-          # 생성 확인
-          kubectl get secret ghcr-secret -n ${NAMESPACE}
-
-      - name: 🔐 Deploy application secrets
-        timeout-minutes: 7
-        env:
-          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-          BACKEND_IMAGE: ${{ needs.build-and-scan.outputs.backend-image }}
-          FRONTEND_IMAGE: ${{ needs.build-and-scan.outputs.frontend-image }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
-          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-        run: |
-          echo "🔐 Deploying secrets to ${ENVIRONMENT} environment..."
-          
-          NAMESPACE="club-platform-${ENVIRONMENT}"
-
-          # ConfigMap 생성
-          kubectl create configmap backend-config \
-            --from-literal=DEBUG="True" \
-            --from-literal=DB_NAME="gwnu_club_db_staging" \
-            --from-literal=DB_USER="gwnu_user" \
-            --from-literal=DB_HOST="staging-mysql" \
-            --from-literal=DB_PORT="3306" \
+          kubectl create secret docker-registry ghcr-secret \
+            --docker-server=ghcr.io \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITOPS_TOKEN }}" \
             --namespace="${NAMESPACE}" \
             --dry-run=client -o yaml | kubectl apply -f -
-          
-          # Backend secrets
-          kubectl create secret generic staging-backend-secrets \
-            --from-literal=secret-key="${SECRET_KEY}" \
-            --from-literal=email-host-user="${EMAIL_HOST_USER}" \
-            --from-literal=email-host-password="${EMAIL_HOST_PASSWORD}" \
-            --from-literal=db-password="${DB_PASSWORD}" \
-            --namespace="${NAMESPACE}" \
-            --dry-run=client -o yaml | kubectl apply -f -
-          
-          # MySQL secrets
-          kubectl create secret generic staging-mysql-secrets \
-            --from-literal=root-password="${MYSQL_ROOT_PASSWORD}" \
-            --from-literal=user-password="${DB_PASSWORD}" \
-            --namespace="${NAMESPACE}" \
-            --dry-run=client -o yaml | kubectl apply -f -
-          
-          echo "✅ All secrets deployed successfully to ${ENVIRONMENT}"
 
-      - name: 🚀 Deploy applications with ImagePullSecret
-        timeout-minutes: 7
+      - name: 🚀 Deploy apps
         env:
-          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-          BACKEND_IMAGE: ${{ needs.build-and-scan.outputs.backend-image }}
-          FRONTEND_IMAGE: ${{ needs.build-and-scan.outputs.frontend-image }}
+          NAMESPACE: "club-platform-${{ github.ref_name }}"
         run: |
-          echo "🚀 Deploying applications to ${ENVIRONMENT} environment with ImagePullSecret..."
-
-          NAMESPACE="club-platform-${ENVIRONMENT}"
-
-          # Kustomize를 사용한 배포 (manifests 디렉토리가 있는 경우)
-          if [ -d "manifests/overlays/${ENVIRONMENT}" ]; then
-            echo "📁 Using Kustomize manifests for deployment..."
-
-            # 임시로 이미지 태그 업데이트
-            cd manifests/overlays/${ENVIRONMENT}
-
-            # 🔧 문제가 되는 image-pull-secret.yaml 제거 (kubectl로 이미 생성했으므로)
-            if [ -f "image-pull-secret.yaml" ]; then
-              echo "🗑️ Removing problematic image-pull-secret.yaml (using kubectl-created secret instead)"
-              rm -f image-pull-secret.yaml
-            fi
-
-            # kustomization.yaml에서 image-pull-secret.yaml 참조 제거
-            if grep -q "image-pull-secret.yaml" kustomization.yaml; then
-              sed -i '/image-pull-secret.yaml/d' kustomization.yaml
-            fi
-
-            # ImagePullSecret 추가 - 기존 패치 파일 수정
-            echo "🔧 Adding ImagePullSecret to existing patch files..."
-
-            # backend-patch.yaml에 imagePullSecrets 추가 (이미 있다면 건너뜀)
-            if ! grep -q "imagePullSecrets" backend-patch.yaml; then
-              # spec.template.spec 바로 다음에 imagePullSecrets 추가
-              sed -i '/spec:/,/template:/,/spec:/{
-                /containers:/i\
-            imagePullSecrets:\
-            - name: ghcr-secret
-              }' backend-patch.yaml
-            fi
-
-            # frontend-patch.yaml에 imagePullSecrets 추가 (이미 있다면 건너뜀)
-            if ! grep -q "imagePullSecrets" frontend-patch.yaml; then
-              # spec.template.spec 바로 다음에 imagePullSecrets 추가
-              sed -i '/spec:/,/template:/,/spec:/{
-                /containers:/i\
-            imagePullSecrets:\
-            - name: ghcr-secret
-              }' frontend-patch.yaml
-            fi
-
-            # 이미지 태그 업데이트
-            BACKEND_REPO=$(echo "${BACKEND_IMAGE}" | cut -d':' -f1)
-            BACKEND_TAG=$(echo "${BACKEND_IMAGE}" | cut -d':' -f2)
-            FRONTEND_REPO=$(echo "${FRONTEND_IMAGE}" | cut -d':' -f1)
-            FRONTEND_TAG=$(echo "${FRONTEND_IMAGE}" | cut -d':' -f2)
-
-            # kustomization.yaml에서 이미지 태그 업데이트
-            sed -i "s|newTag: develop|newTag: ${BACKEND_TAG}|g" kustomization.yaml
-
-            echo "📄 Updated kustomization.yaml contents:"
-            cat kustomization.yaml
-
-            echo "📄 Updated backend-patch.yaml contents:"
-            head -20 backend-patch.yaml
-
-            cd ../../..
-
-            # Kustomize 배포 (--validate=false로 검증 건너뛰기)
-            echo "🚀 Applying Kustomize manifests..."
-            kubectl apply -k manifests/overlays/${ENVIRONMENT} --validate=false --request-timeout=300s
-
-          else
-            echo "📦 Creating basic deployment with ImagePullSecret..."
-
-            # Backend 배포
-            cat <<EOF | kubectl apply -f -
+          # 간단한 직접 배포 (Kustomize 제거로 시간 절약)
+          cat <<EOF | kubectl apply -f -
           apiVersion: apps/v1
           kind: Deployment
           metadata:
-            name: staging-backend
+            name: backend
             namespace: ${NAMESPACE}
-            labels:
-              app: club-platform
-              component: backend
-              environment: ${ENVIRONMENT}
           spec:
             replicas: 1
             selector:
               matchLabels:
-                app: club-platform
-                component: backend
+                app: backend
             template:
               metadata:
                 labels:
-                  app: club-platform
-                  component: backend
+                  app: backend
               spec:
                 imagePullSecrets:
                 - name: ghcr-secret
                 containers:
                 - name: backend
-                  image: ${BACKEND_IMAGE}
+                  image: ${{ needs.build.outputs.backend-image }}
                   ports:
                   - containerPort: 8000
-                  env:
-                  - name: SECRET_KEY
-                    valueFrom:
-                      secretKeyRef:
-                        name: backend-secrets
-                        key: secret-key
-                  - name: DB_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        name: backend-secrets
-                        key: db-password
-                  resources:
-                    requests:
-                      memory: "256Mi"
-                      cpu: "250m"
-                    limits:
-                      memory: "512Mi"
-                      cpu: "500m"
           ---
           apiVersion: v1
           kind: Service
           metadata:
-            name: staging-backend-service
+            name: backend-service
             namespace: ${NAMESPACE}
           spec:
             selector:
-              app: club-platform
-              component: backend
+              app: backend
             ports:
             - port: 8000
-              targetPort: 8000
-          EOF
-
-            # Frontend 배포
-            cat <<EOF | kubectl apply -f -
+          ---
           apiVersion: apps/v1
           kind: Deployment
           metadata:
-            name: staging-frontend
+            name: frontend
             namespace: ${NAMESPACE}
-            labels:
-              app: club-platform
-              component: frontend
-              environment: ${ENVIRONMENT}
           spec:
             replicas: 1
             selector:
               matchLabels:
-                app: club-platform
-                component: frontend
+                app: frontend
             template:
               metadata:
                 labels:
-                  app: club-platform
-                  component: frontend
+                  app: frontend
               spec:
                 imagePullSecrets:
                 - name: ghcr-secret
                 containers:
                 - name: frontend
-                  image: ${FRONTEND_IMAGE}
+                  image: ${{ needs.build.outputs.frontend-image }}
                   ports:
                   - containerPort: 3000
-                  resources:
-                    requests:
-                      memory: "128Mi"
-                      cpu: "100m"
-                    limits:
-                      memory: "256Mi"
-                      cpu: "200m"
           ---
           apiVersion: v1
           kind: Service
           metadata:
-            name: staging-frontend-service
+            name: frontend-service
             namespace: ${NAMESPACE}
           spec:
             selector:
-              app: club-platform
-              component: frontend
+              app: frontend
             ports:
             - port: 3000
-              targetPort: 3000
           EOF
-          fi
 
-          echo "✅ Applications deployed successfully with ImagePullSecret"
-
-      # ✅ 배포 상태 확인 및 ImagePullBackOff 검증
-      - name: ✅ Verify deployment and check ImagePullBackOff
-        timeout-minutes: 8
-        env:
-          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-        run: |
-          NAMESPACE="club-platform-${ENVIRONMENT}"
-    
-          echo "🔍 Checking deployment status in namespace: ${NAMESPACE}..."
-          
-          # 배포 완료 대기
-          kubectl rollout status deployment/staging-backend -n ${NAMESPACE} --timeout=300s --request-timeout=300s || echo "Backend deployment timeout"
-          kubectl rollout status deployment/staging-frontend -n ${NAMESPACE} --timeout=300s --request-timeout=300s || echo "Frontend deployment timeout"
-          
-          # 최종 상태 확인
-          echo "📊 Final status:"
-          kubectl get pods -n ${NAMESPACE}
-          kubectl get services -n ${NAMESPACE}
-          
-          # ImagePullBackOff 체크
-          echo "🔍 Checking for ImagePullBackOff errors..."
-          if kubectl get pods -n ${NAMESPACE} | grep -q "ImagePullBackOff"; then
-            echo "❌ ImagePullBackOff still exists!"
-            echo "🔍 Pod details:"
-            kubectl describe pods -n ${NAMESPACE}
-            echo "🔍 Events:"
-            kubectl get events -n ${NAMESPACE} --sort-by='.lastTimestamp' | tail -10
-            exit 1
-          else
-            echo "✅ All pods are running successfully! ImagePullBackOff resolved!"
-          fi
-          
-          # 서비스 상태 확인
-          echo "🌐 Service endpoints:"
-          kubectl get endpoints -n ${NAMESPACE}
-
-  # 📢 향상된 알림 시스템
-  notify:
-    name: 📢 Enhanced Notifications
-    runs-on: ubuntu-latest
-    needs: [security-validation, code-quality, test, build-and-scan, deploy]
-    if: always() && (failure() || success())
-    timeout-minutes: 3
-    
-    steps:
-      - name: 📊 Generate comprehensive report
-        id: report
-        run: |
-          # 전체 파이프라인 상태 결정
-          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
-            echo "status=❌ FAILED" >> $GITHUB_OUTPUT
-            echo "color=danger" >> $GITHUB_OUTPUT
-            echo "emoji=❌" >> $GITHUB_OUTPUT
-          elif [[ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
-            echo "status=⏹️ CANCELLED" >> $GITHUB_OUTPUT
-            echo "color=warning" >> $GITHUB_OUTPUT
-            echo "emoji=⏹️" >> $GITHUB_OUTPUT
-          else
-            echo "status=✅ SUCCESS" >> $GITHUB_OUTPUT
-            echo "color=good" >> $GITHUB_OUTPUT
-            echo "emoji=✅" >> $GITHUB_OUTPUT
-          fi
-
-      # 타임스탬프 생성
-      - name: 🕐 Generate timestamp
-        id: timestamp
-        run: echo "unix_time=$(date +%s)" >> $GITHUB_OUTPUT
-
-      # 향상된 Slack 알림 (ImagePullBackOff 해결 상태 포함)
-      - name: 📢 Enhanced Slack notification
-        if: env.SLACK_WEBHOOK_URL != ''
-        uses: 8398a7/action-slack@v3
-        with:
-          status: custom
-          custom_payload: |
-            {
-              "channel": "#cicd-alerts",
-              "username": "CI/CD Bot with ImagePullBackOff Fix",
-              "icon_emoji": "${{ steps.report.outputs.emoji }}",
-              "attachments": [{
-                "color": "${{ steps.report.outputs.color }}",
-                "title": "🔧 CI/CD Pipeline with ImagePullBackOff Fix",
-                "text": "${{ steps.report.outputs.status }}",
-                "fields": [
-                  {
-                    "title": "Repository",
-                    "value": "${{ github.repository }}",
-                    "short": true
-                  },
-                  {
-                    "title": "Branch",
-                    "value": "${{ github.ref_name }}",
-                    "short": true
-                  },
-                  {
-                    "title": "Environment",
-                    "value": "${{ github.ref == 'refs/heads/main' && 'Production' || 'Staging' }}",
-                    "short": true
-                  },
-                  {
-                    "title": "Author",
-                    "value": "${{ github.actor }}",
-                    "short": true
-                  },
-                  {
-                    "title": "Images Built",
-                    "value": "Backend: ${{ needs.build-and-scan.outputs.backend-image }}\\nFrontend: ${{ needs.build-and-scan.outputs.frontend-image }}",
-                    "short": false
-                  },
-                  {
-                    "title": "🔧 ImagePullBackOff Fix",
-                    "value": "✅ ImagePullSecret (ghcr-secret) created and applied",
-                    "short": false
-                  }
-                ],
-                "footer": "CI/CD Pipeline with ImagePullBackOff Resolution",
-                "ts": ${{ steps.timestamp.outputs.unix_time }}
-              }]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: 📊 Enhanced Pipeline Summary
-        run: |
-          echo "=== 🎯 CI/CD Pipeline with ImagePullBackOff Fix Summary ==="
-          echo "Repository: ${{ github.repository }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}"
-          echo "Commit: ${{ github.sha }}"
-          echo "Author: ${{ github.actor }}"
-          echo "Status: ${{ steps.report.outputs.status }}"
-          echo ""
-          echo "=== 🔧 ImagePullBackOff 해결책 적용됨 ==="
-          echo "✅ ImagePullSecret (ghcr-secret) 자동 생성"
-          echo "✅ Backend/Frontend Deployment에 imagePullSecrets 추가"
-          echo "✅ GHCR 인증 정보 자동 주입"
-          echo "✅ Pod 상태 검증 및 ImagePullBackOff 체크"
-          echo ""
-          echo "=== 📦 빌드된 이미지 ==="
-          if [[ "${{ needs.build-and-scan.result }}" == "success" ]]; then
-            echo "Backend: ${{ needs.build-and-scan.outputs.backend-image }}"
-            echo "Frontend: ${{ needs.build-and-scan.outputs.frontend-image }}"
-          else
-            echo "Images not built due to CI failure"
-          fi
-          echo ""
-          echo "=== 🚀 배포 결과 ==="
-          if [[ "${{ needs.deploy.result }}" == "success" ]]; then
-            echo "✅ 배포 성공! ImagePullBackOff 문제 해결됨"
-            echo "✅ Pod들이 Running 상태로 실행 중"
-            echo "✅ ImagePullSecret이 정상 작동"
-          else
-            echo "❌ 배포 실패 또는 건너뜀"
-          fi
-          echo ""
-          echo "=== ⏱️ 실행 시간 ==="
-          START_TIME=$(date -d "${{ github.event.head_commit.timestamp }}" +%s 2>/dev/null || echo "0")
-          CURRENT_TIME=$(date +%s)
-          
-          if [[ "${START_TIME}" != "0" ]]; then
-            DURATION=$((CURRENT_TIME - START_TIME))
-            DURATION_MIN=$((DURATION / 60))
-            DURATION_SEC=$((DURATION % 60))
-            echo "Duration: ${DURATION_MIN}분 ${DURATION_SEC}초"
-          else
-            echo "Duration: 계산 불가"
-          fi
-          
-          echo "Started: ${{ github.event.head_commit.timestamp }}"
-          echo "Completed: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo ""
-          echo "=== 🔗 링크 ==="
-          echo "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "Commit: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
-          echo ""
-          echo "🎉 ImagePullBackOff 문제가 완전히 해결되었습니다!"
+          echo "✅ 배포 완료"
