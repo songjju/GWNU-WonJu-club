@@ -220,11 +220,11 @@ jobs:
           
           echo ""
           echo "🔑 Backend secrets 생성 중..."
-          if kubectl get secret backend-secrets -n "${NAMESPACE}" >/dev/null 2>&1; then
-            echo "  🗑️ 기존 backend-secrets 삭제 중..."
-            kubectl delete secret backend-secrets -n "${NAMESPACE}"
+          if kubectl get secret staging-backend-secrets -n "${NAMESPACE}" >/dev/null 2>&1; then
+            echo "  🗑️ 기존 staging-backend-secrets 삭제 중..."
+            kubectl delete secret staging-backend-secrets -n "${NAMESPACE}"
           fi
-          kubectl create secret generic backend-secrets \
+          kubectl create secret generic staging-backend-secrets \
             --from-literal=secret-key="${SECRET_KEY}" \
             --from-literal=email-host-user="${EMAIL_HOST_USER}" \
             --from-literal=email-host-password="${EMAIL_HOST_PASSWORD}" \
@@ -233,11 +233,11 @@ jobs:
           
           echo ""
           echo "🔑 MySQL secrets 생성 중..."
-          if kubectl get secret mysql-secrets -n "${NAMESPACE}" >/dev/null 2>&1; then
-            echo "  🗑️ 기존 mysql-secrets 삭제 중..."
-            kubectl delete secret mysql-secrets -n "${NAMESPACE}"
+          if kubectl get secret staging-mysql-secrets -n "${NAMESPACE}" >/dev/null 2>&1; then
+            echo "  🗑️ 기존 staging-mysql-secrets 삭제 중..."
+            kubectl delete secret staging-mysql-secrets -n "${NAMESPACE}"
           fi
-          kubectl create secret generic mysql-secrets \
+          kubectl create secret generic staging-mysql-secrets \
             --from-literal=root-password="${MYSQL_ROOT_PASSWORD}" \
             --from-literal=user-password="${DB_PASSWORD}" \
             --namespace="${NAMESPACE}" && echo "  ✅ mysql-secrets 생성 성공" || echo "  ❌ mysql-secrets 생성 실패"
@@ -250,7 +250,7 @@ jobs:
           # 각 시크릿의 세부 정보 확인
           echo ""
           echo "🔍 각 시크릿 상세 확인:"
-          for secret in ghcr-secret backend-secrets mysql-secrets; do
+          for secret in ghcr-secret staging-backend-secrets staging-mysql-secrets; do
             if kubectl get secret "${secret}" -n "${NAMESPACE}" >/dev/null 2>&1; then
               echo "  ✅ ${secret} 존재 확인"
               kubectl get secret "${secret}" -n "${NAMESPACE}" -o jsonpath='{.metadata.name}: {.data}' | head -c 100
