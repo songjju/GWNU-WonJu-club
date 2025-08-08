@@ -18,30 +18,45 @@ ENV GENERATE_SOURCEMAP=false
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 ENV TSC_COMPILE_ON_ERROR=true
 
-# 빌드 전 상태 확인 (단계별 분리)
-RUN echo "=== 빌드 전 검사 ===" && ls -la src/
-
-# 실제 빌드 실행 (오류 발생 시 중단)
+# 빌드 실행
 RUN npm run build
 
-# 빌드 후 검증 (빌드 성공 시에만 실행)
-RUN echo "=== 빌드 완료 후 확인 ===" && \
+# 빌드 결과 확인
+RUN echo "=== 빌드 결과 확인 ===" && \
     ls -la build/ && \
-    echo "첫 번째 파일들:" && \
-    ls build/ | head -5
+    echo "build 디렉토리 파일 수:" && \
+    find build -type f | wc -l
 
 # 프로덕션 이미지
 FROM nginx:alpine
 
-# 기존 nginx 기본 파일들 완전 제거
+# nginx 사용자로 실행하기 위한 설정
+RUN addgroup -g 1000 -S appgroup && \
+    adduser -u 1000 -S appuser -G appgroup
+
+# 기존 nginx 기본 파일들 제거
 RUN rm -rf /usr/share/nginx/html/*
 
-# 빌드 결과 복사
-COPY --from=builder /app/build /usr/share/nginx/html
+# 빌드 결과 복사 및 권한 설정
+COPY --from=builder --chown=1000:1000 /app/build /usr/share/nginx/html
+
+# nginx 디렉토리 권한 설정
+RUN chown -R 1000:1000 /var/cache/nginx /var/run /var/log/nginx && \
+    chmod -R 755 /usr/share/nginx/html && \
+    chmod -R 777 /var/cache/nginx /var/run
 
 # 커스텀 nginx 설정 파일 복사
 COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
+# 복사 후 최종 확인
+RUN echo "=== 최종 파일 확인 ===" && \
+    ls -la /usr/share/nginx/html/ && \
+    echo "index.html 존재 여부:" && \
+    test -f /usr/share/nginx/html/index.html && echo "✅ index.html 존재" || echo "❌ index.html 없음"
+
 EXPOSE 3000
+
+# 사용자 변경
+USER 1000:1000
 
 CMD ["nginx", "-g", "daemon off;"]
