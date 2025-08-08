@@ -18,17 +18,17 @@ ENV GENERATE_SOURCEMAP=false
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 ENV TSC_COMPILE_ON_ERROR=true
 
-# 빌드 실행 및 검증
-RUN echo "=== 빌드 시작 전 검사 ===" && \
-    ls -la src/ && \
-    echo "=== package.json 스크립트 확인 ===" && \
-    cat package.json | grep -A 5 '"scripts"' && \
-    echo "=== 실제 빌드 실행 ===" && \
-    npm run build && \
-    echo "=== 빌드 결과 확인 ===" && \
+# 빌드 전 상태 확인 (단계별 분리)
+RUN echo "=== 빌드 전 검사 ===" && ls -la src/
+
+# 실제 빌드 실행 (오류 발생 시 중단)
+RUN npm run build
+
+# 빌드 후 검증 (빌드 성공 시에만 실행)
+RUN echo "=== 빌드 완료 후 확인 ===" && \
     ls -la build/ && \
-    echo "=== build/index.html 내용 미리보기 ===" && \
-    head -20 build/index.html
+    echo "첫 번째 파일들:" && \
+    ls build/ | head -5
 
 # 프로덕션 이미지
 FROM nginx:alpine
@@ -36,14 +36,8 @@ FROM nginx:alpine
 # 기존 nginx 기본 파일들 완전 제거
 RUN rm -rf /usr/share/nginx/html/*
 
-# 빌드 결과 복사 (더 명시적으로)
-COPY --from=builder /app/build/* /usr/share/nginx/html/
-
-# 복사 결과 확인
-RUN echo "=== 복사 후 nginx html 디렉토리 확인 ===" && \
-    ls -la /usr/share/nginx/html/ && \
-    echo "=== index.html 파일 확인 ===" && \
-    head -10 /usr/share/nginx/html/index.html
+# 빌드 결과 복사
+COPY --from=builder /app/build /usr/share/nginx/html
 
 # 커스텀 nginx 설정 파일 복사
 COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
