@@ -175,7 +175,7 @@ jobs:
 
       - name: 🔑 Create secrets
         env:
-          NAMESPACE: "club-platform-${{ github.ref_name }}"
+          NAMESPACE: "club-platform-staging"
           # 모든 시크릿을 환경변수로 명시적 설정
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
@@ -264,7 +264,7 @@ jobs:
 
       - name: 🚀 Deploy apps
         env:
-          NAMESPACE: "club-platform-${{ github.ref_name }}"
+          NAMESPACE: "club-platform-staging"
         run: |
           echo "🚀 애플리케이션 배포는 스킵 (시크릿 생성 테스트용)"
           echo "✅ 배포 스킵됨"
