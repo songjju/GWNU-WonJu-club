@@ -6,8 +6,8 @@ WORKDIR /app
 # package.json과 package-lock.json 복사
 COPY package*.json ./
 
-# 의존성 설치 (Redux, Router 등 복잡한 의존성 포함)
-RUN npm ci --silent
+# 의존성 설치 (package-lock.json 문제 우회)
+RUN npm install
 
 # 전체 소스 코드 복사 (src/, public/, nginx/ 등)
 COPY . .
