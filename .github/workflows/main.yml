@@ -148,7 +148,7 @@ jobs:
           kubectl create namespace ${NAMESPACE} || echo "네임스페이스 이미 존재"
           
           # 시크릿들 삭제 후 재생성 (더 안전함)
-          kubectl delete secret ghcr-secret backend-secrets mysql-secrets -n "${NAMESPACE}" || echo "기존 시크릿 없음"
+          kubectl delete secret ghcr-secret staging-backend-secrets staging-mysql-secrets -n "${NAMESPACE}" || echo "기존 시크릿 없음"
           
           # ImagePullSecret
           kubectl create secret docker-registry ghcr-secret \
@@ -158,7 +158,7 @@ jobs:
             --namespace="${NAMESPACE}"
           
           # Backend secrets
-          kubectl create secret generic backend-secrets \
+          kubectl create secret generic staging-backend-secrets \
             --from-literal=secret-key="${SECRET_KEY}" \
             --from-literal=email-host-user="${EMAIL_HOST_USER}" \
             --from-literal=email-host-password="${EMAIL_HOST_PASSWORD}" \
@@ -166,7 +166,7 @@ jobs:
             --namespace="${NAMESPACE}"
           
           # MySQL secrets
-          kubectl create secret generic mysql-secrets \
+          kubectl create secret generic staging-mysql-secrets \
             --from-literal=root-password="${MYSQL_ROOT_PASSWORD}" \
             --from-literal=user-password="${DB_PASSWORD}" \
             --namespace="${NAMESPACE}"
