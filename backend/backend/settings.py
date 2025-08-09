@@ -70,7 +70,6 @@ INSTALLED_APPS = [
     'club_information',
     'club_management',
     'ai_chatbot',
-    'health',
 ]
 
 MIDDLEWARE = [

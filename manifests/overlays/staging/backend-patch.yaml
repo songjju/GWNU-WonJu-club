@@ -76,25 +76,6 @@ spec:
             memory: "1Gi"  # 256Mi → 512Mi로 증가
             cpu: "500m"      # 250m → 500m으로 증가
         
-        # 🏥 Health Check 추가 (서비스 안정성 향상)
-        livenessProbe:
-          httpGet:
-            path: /health/
-            port: 8000
-          initialDelaySeconds: 120
-          periodSeconds: 30
-          timeoutSeconds: 10
-          failureThreshold: 3
-        
-        readinessProbe:
-          httpGet:
-            path: /ready/
-            port: 8000
-          initialDelaySeconds: 180
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        
         # 보안 컨텍스트
         securityContext:
           allowPrivilegeEscalation: false

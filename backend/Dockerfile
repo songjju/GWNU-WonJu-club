@@ -59,8 +59,4 @@ RUN find . -type f -name "*.pyc" -delete && \
 # 포트 노출
 EXPOSE 8000
 
-# 헬스체크 추가 (선택사항)
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health/ || exit 1
-
 CMD ["bash", "-c", "echo 'Waiting for MySQL...' && while ! nc -z -w5 staging-mysql 3306; do echo 'MySQL not ready, waiting...'; sleep 2; done && echo 'MySQL is ready!' && python manage.py makemigrations && python manage.py migrate && daphne -b 0.0.0.0 -p 8000 backend.asgi:application"]

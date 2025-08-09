@@ -36,8 +36,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('health/', health_check, name='health'),     # /health/
-    path('ready/', readiness_check, name='ready'),
     path('api-auth', include('rest_framework.urls')),
     path('club_introduce/', include('club_introduce.urls')),
     path('club_information/', include('club_information.urls')),
