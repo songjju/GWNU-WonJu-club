@@ -18,7 +18,7 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 // Pagination 컴포넌트를 inline으로 정의
 import { API_BASE_URL } from "../../config/apiConfig";
-import "./ClubNotice.css";
+import "../Main_Style/ClubNotice.css";
 
 // Pagination 컴포넌트를 inline으로 정의
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
