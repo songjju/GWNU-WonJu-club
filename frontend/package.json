@@ -32,6 +32,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-app-rewired build",
+    "test": "react-scripts test --watchAll=false --passWithNoTests",
     "format:check": "echo 'Format check disabled for minimal build'"
   },
   "browserslist": {
