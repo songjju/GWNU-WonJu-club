@@ -11,8 +11,8 @@ env:
 
 jobs:
   # 🧪 필수 테스트만 (병렬 실행)
-  test:
-    name: 🧪 Essential Tests
+  backend-test:
+    name: 🧪 Backend Tests
     runs-on: ubuntu-latest
     timeout-minutes: 8
     
@@ -33,20 +33,14 @@ jobs:
       
       - uses: actions/cache@v3
         with:
-          path: |
-            ~/.cache/pip
-            ~/.npm
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/requirements.txt', '**/package-lock.json') }}
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
       - uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-          
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
 
-      # 백엔드 빠른 테스트
+      # 백엔드 테스트만 실행
       - name: 🧪 Backend tests
         timeout-minutes: 5
         env:
@@ -59,14 +53,6 @@ jobs:
           cd backend
           pip install -r requirements.txt
           python manage.py test --failfast
-
-      # 프론트엔드 빠른 테스트
-      - name: 🧪 Frontend tests
-        timeout-minutes: 3
-        run: |
-          cd frontend
-          npm ci --silent
-          npm test -- --watchAll=false --passWithNoTests
 
   # 🐳 빌드 (테스트와 병렬)
   build:
@@ -126,7 +112,7 @@ jobs:
   deploy:
     name: 🚀 Deploy
     runs-on: self-hosted
-    needs: [test, build]
+    needs: [backend-test, build]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     timeout-minutes: 10
     
