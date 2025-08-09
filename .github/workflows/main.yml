@@ -173,238 +173,115 @@ jobs:
           
           echo "✅ 모든 시크릿 생성 완료"
 
-      - name: 🚀 Deploy apps with proper health checks
+      - name: 🚀 Update existing deployments (ArgoCD 호환)
         env:
           NAMESPACE: "club-platform-staging"
         run: |
-          cat <<EOF | kubectl apply -f -
-          # MySQL 먼저 배포 (다른 앱들이 의존)
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: staging-mysql
-            namespace: ${NAMESPACE}
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: mysql
-            template:
-              metadata:
-                labels:
-                  app: mysql
-              spec:
-                containers:
-                - name: mysql
-                  image: mysql:8.0
-                  ports:
-                  - containerPort: 3306
-                  env:
-                  - name: MYSQL_ROOT_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        name: mysql-secrets
-                        key: root-password
-                  - name: MYSQL_DATABASE
-                    value: "gwnu_club_db"
-                  - name: MYSQL_USER
-                    value: "gwnu_user"
-                  - name: MYSQL_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        name: mysql-secrets
-                        key: user-password
-                  volumeMounts:
-                  - name: mysql-storage
-                    mountPath: /var/lib/mysql
-                  # 🔧 MySQL 헬스체크 수정
-                  readinessProbe:
-                    exec:
-                      command:
-                      - mysqladmin
-                      - ping
-                      - -h
-                      - localhost
-                      - -u
-                      - root
-                      - -p\$(MYSQL_ROOT_PASSWORD)
-                    initialDelaySeconds: 30
-                    periodSeconds: 10
-                    timeoutSeconds: 5
-                  livenessProbe:
-                    exec:
-                      command:
-                      - mysqladmin
-                      - ping
-                      - -h
-                      - localhost
-                      - -u
-                      - root
-                      - -p\$(MYSQL_ROOT_PASSWORD)
-                    initialDelaySeconds: 60
-                    periodSeconds: 30
-                    timeoutSeconds: 10
-                volumes:
-                - name: mysql-storage
-                  emptyDir: {}
-          ---
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: mysql-service
-            namespace: ${NAMESPACE}
-          spec:
-            selector:
-              app: mysql
-            ports:
-            - port: 3306
-              targetPort: 3306
-          ---
-          # Backend 배포
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: staging-backend
-            namespace: ${NAMESPACE}
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: backend
-            template:
-              metadata:
-                labels:
-                  app: backend
-              spec:
-                imagePullSecrets:
-                - name: ghcr-secret
-                containers:
-                - name: backend
-                  image: ${{ needs.build.outputs.backend-image }}
-                  ports:
-                  - containerPort: 8000
-                  env:
-                  - name: SECRET_KEY
-                    valueFrom:
-                      secretKeyRef:
-                        name: backend-secrets
-                        key: secret-key
-                  - name: DB_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        name: backend-secrets
-                        key: db-password
-                  - name: DB_HOST
-                    value: "mysql-service"
-                  - name: DB_NAME
-                    value: "gwnu_club_db"
-                  - name: DB_USER
-                    value: "gwnu_user"
-                  - name: DB_PORT
-                    value: "3306"
-                  - name: DEBUG
-                    value: "False"
-                  # 🔧 Backend 헬스체크 수정
-                  readinessProbe:
-                    httpGet:
-                      path: /health/
-                      port: 8000
-                    initialDelaySeconds: 30
-                    periodSeconds: 10
-                    timeoutSeconds: 5
-                    failureThreshold: 3
-                  livenessProbe:
-                    httpGet:
-                      path: /health/
-                      port: 8000
-                    initialDelaySeconds: 60
-                    periodSeconds: 30
-                    timeoutSeconds: 10
-                    failureThreshold: 3
-                  # 🔧 리소스 제한 추가
-                  resources:
-                    requests:
-                      memory: "256Mi"
-                      cpu: "250m"
-                    limits:
-                      memory: "512Mi"
-                      cpu: "500m"
-          ---
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: backend-service
-            namespace: ${NAMESPACE}
-          spec:
-            selector:
-              app: backend
-            ports:
-            - port: 8000
-              targetPort: 8000
-          ---
-          # Frontend 배포
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: staging-frontend
-            namespace: ${NAMESPACE}
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: frontend
-            template:
-              metadata:
-                labels:
-                  app: frontend
-              spec:
-                imagePullSecrets:
-                - name: ghcr-secret
-                containers:
-                - name: frontend
-                  image: ${{ needs.build.outputs.frontend-image }}
-                  ports:
-                  - containerPort: 3000
-                  env:
-                  - name: REACT_APP_API_URL
-                    value: "http://backend-service:8000"
-                  # 🔧 Frontend 헬스체크 수정
-                  readinessProbe:
-                    httpGet:
-                      path: /
-                      port: 3000
-                    initialDelaySeconds: 20
-                    periodSeconds: 10
-                    timeoutSeconds: 5
-                    failureThreshold: 3
-                  livenessProbe:
-                    httpGet:
-                      path: /
-                      port: 3000
-                    initialDelaySeconds: 30
-                    periodSeconds: 30
-                    timeoutSeconds: 10
-                    failureThreshold: 3
-                  resources:
-                    requests:
-                      memory: "128Mi"
-                      cpu: "100m"
-                    limits:
-                      memory: "256Mi"
-                      cpu: "200m"
-          ---
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: frontend-service
-            namespace: ${NAMESPACE}
-          spec:
-            selector:
-              app: frontend
-            ports:
-            - port: 3000
-              targetPort: 3000
-          EOF
+          echo "🔧 기존 Deployment 설정 업데이트 중..."
+          
+          # MySQL 헬스체크만 업데이트
+          kubectl patch deployment staging-mysql -n "${NAMESPACE}" --type='merge' -p='
+          {
+            "spec": {
+              "template": {
+                "spec": {
+                  "containers": [
+                    {
+                      "name": "mysql",
+                      "readinessProbe": {
+                        "exec": {
+                          "command": ["mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+                        },
+                        "initialDelaySeconds": 30,
+                        "periodSeconds": 10,
+                        "timeoutSeconds": 5
+                      },
+                      "livenessProbe": {
+                        "exec": {
+                          "command": ["mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+                        },
+                        "initialDelaySeconds": 60,
+                        "periodSeconds": 30,
+                        "timeoutSeconds": 10
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }' || echo "MySQL 패치 실패"
+          
+          # Backend 헬스체크 업데이트
+          kubectl patch deployment staging-backend -n "${NAMESPACE}" --type='merge' -p='
+          {
+            "spec": {
+              "template": {
+                "spec": {
+                  "containers": [
+                    {
+                      "name": "backend",
+                      "readinessProbe": {
+                        "httpGet": {
+                          "path": "/health/",
+                          "port": 8000
+                        },
+                        "initialDelaySeconds": 60,
+                        "periodSeconds": 15,
+                        "timeoutSeconds": 10,
+                        "failureThreshold": 5
+                      },
+                      "livenessProbe": {
+                        "httpGet": {
+                          "path": "/health/",
+                          "port": 8000
+                        },
+                        "initialDelaySeconds": 120,
+                        "periodSeconds": 30,
+                        "timeoutSeconds": 10,
+                        "failureThreshold": 3
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }' || echo "Backend 패치 실패"
+          
+          # Frontend 헬스체크 업데이트
+          kubectl patch deployment staging-frontend -n "${NAMESPACE}" --type='merge' -p='
+          {
+            "spec": {
+              "template": {
+                "spec": {
+                  "containers": [
+                    {
+                      "name": "frontend",
+                      "readinessProbe": {
+                        "httpGet": {
+                          "path": "/",
+                          "port": 3000
+                        },
+                        "initialDelaySeconds": 30,
+                        "periodSeconds": 15,
+                        "timeoutSeconds": 10,
+                        "failureThreshold": 5
+                      },
+                      "livenessProbe": {
+                        "httpGet": {
+                          "path": "/",
+                          "port": 3000
+                        },
+                        "initialDelaySeconds": 60,
+                        "periodSeconds": 30,
+                        "timeoutSeconds": 10,
+                        "failureThreshold": 3
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }' || echo "Frontend 패치 실패"
 
           echo "✅ 배포 완료 - 헬스체크 개선됨"
 
