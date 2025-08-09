@@ -34,7 +34,7 @@ RUN echo "=== 빌드 전 파일 확인 ===" && \
 FROM nginx:alpine
 
 # 기본 파일 제거
-RUN rm -rf /usr/share/nginx/html/*
+RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/*
 
 # nginx 설정
 COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
@@ -50,5 +50,10 @@ RUN echo "=== 복사 후 nginx 디렉토리 ===" && \
     echo "=== 파일 개수 ===" && \
     find /usr/share/nginx/html -type f | wc -l
 
+RUN chmod -R 755 /usr/share/nginx/html
+
+# 3000번 포트 노출
 EXPOSE 3000
+
+# Nginx 실행
 CMD ["nginx", "-g", "daemon off;"]
