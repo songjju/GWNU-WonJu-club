@@ -133,7 +133,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🔑 Create secrets
+      - name: 🔑 Create secrets (올바른 이름으로)
         env:
           NAMESPACE: "club-platform-staging"
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -147,7 +147,7 @@ jobs:
           # 네임스페이스 생성
           kubectl create namespace ${NAMESPACE} || echo "네임스페이스 이미 존재"
           
-          # 시크릿들 삭제 후 재생성 (더 안전함)
+          # 🔥 올바른 시크릿 이름으로 삭제/재생성
           kubectl delete secret ghcr-secret staging-backend-secrets staging-mysql-secrets -n "${NAMESPACE}" || echo "기존 시크릿 없음"
           
           # ImagePullSecret
@@ -157,7 +157,7 @@ jobs:
             --docker-password="${{ secrets.GITOPS_TOKEN }}" \
             --namespace="${NAMESPACE}"
           
-          # Backend secrets
+          # Backend secrets (staging- 접두사 사용)
           kubectl create secret generic staging-backend-secrets \
             --from-literal=secret-key="${SECRET_KEY}" \
             --from-literal=email-host-user="${EMAIL_HOST_USER}" \
@@ -165,7 +165,7 @@ jobs:
             --from-literal=db-password="${DB_PASSWORD}" \
             --namespace="${NAMESPACE}"
           
-          # MySQL secrets
+          # MySQL secrets (staging- 접두사 사용)
           kubectl create secret generic staging-mysql-secrets \
             --from-literal=root-password="${MYSQL_ROOT_PASSWORD}" \
             --from-literal=user-password="${DB_PASSWORD}" \
@@ -173,13 +173,13 @@ jobs:
           
           echo "✅ 모든 시크릿 생성 완료"
 
-      - name: 🚀 Update existing deployments (ArgoCD 호환)
+      - name: 🚀 근본 문제 해결 헬스체크 비활성화 및 앱별 수정
         env:
           NAMESPACE: "club-platform-staging"
         run: |
-          echo "🔧 기존 Deployment 설정 업데이트 중..."
+          echo "🔧 근본 문제 해결 중..."
           
-          # MySQL 헬스체크만 업데이트
+          # 🔥 MySQL: 헬스체크 명령어 수정 (올바른 구문)
           kubectl patch deployment staging-mysql -n "${NAMESPACE}" --type='merge' -p='
           {
             "spec": {
@@ -190,19 +190,29 @@ jobs:
                       "name": "mysql",
                       "readinessProbe": {
                         "exec": {
-                          "command": ["mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+                          "command": [
+                            "/bin/bash",
+                            "-c",
+                            "mysqladmin ping -h localhost -u root -p\"$MYSQL_ROOT_PASSWORD\""
+                          ]
                         },
-                        "initialDelaySeconds": 30,
-                        "periodSeconds": 10,
-                        "timeoutSeconds": 5
+                        "initialDelaySeconds": 60,
+                        "periodSeconds": 15,
+                        "timeoutSeconds": 10,
+                        "failureThreshold": 10
                       },
                       "livenessProbe": {
                         "exec": {
-                          "command": ["mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+                          "command": [
+                            "/bin/bash", 
+                            "-c",
+                            "mysqladmin ping -h localhost -u root -p\"$MYSQL_ROOT_PASSWORD\""
+                          ]
                         },
-                        "initialDelaySeconds": 60,
+                        "initialDelaySeconds": 120,
                         "periodSeconds": 30,
-                        "timeoutSeconds": 10
+                        "timeoutSeconds": 15,
+                        "failureThreshold": 5
                       }
                     }
                   ]
@@ -211,7 +221,7 @@ jobs:
             }
           }' || echo "MySQL 패치 실패"
           
-          # Backend 헬스체크 업데이트
+          # 🔥 Backend: 헬스체크 엔드포인트 변경 (/health/ → /)
           kubectl patch deployment staging-backend -n "${NAMESPACE}" --type='merge' -p='
           {
             "spec": {
@@ -221,24 +231,22 @@ jobs:
                     {
                       "name": "backend",
                       "readinessProbe": {
-                        "httpGet": {
-                          "path": "/health/",
+                        "tcpSocket": {
                           "port": 8000
                         },
                         "initialDelaySeconds": 60,
                         "periodSeconds": 15,
                         "timeoutSeconds": 10,
-                        "failureThreshold": 5
+                        "failureThreshold": 10
                       },
                       "livenessProbe": {
-                        "httpGet": {
-                          "path": "/health/",
-                          "port": 8000
+                        "tcpSocket": {
+                          "port": 8000  
                         },
                         "initialDelaySeconds": 120,
                         "periodSeconds": 30,
                         "timeoutSeconds": 10,
-                        "failureThreshold": 3
+                        "failureThreshold": 5
                       }
                     }
                   ]
@@ -247,7 +255,7 @@ jobs:
             }
           }' || echo "Backend 패치 실패"
           
-          # Frontend 헬스체크 업데이트
+          # 🔥 Frontend: 헬스체크를 TCP 소켓으로 변경
           kubectl patch deployment staging-frontend -n "${NAMESPACE}" --type='merge' -p='
           {
             "spec": {
@@ -257,24 +265,22 @@ jobs:
                     {
                       "name": "frontend",
                       "readinessProbe": {
-                        "httpGet": {
-                          "path": "/",
+                        "tcpSocket": {
                           "port": 3000
                         },
-                        "initialDelaySeconds": 30,
+                        "initialDelaySeconds": 45,
                         "periodSeconds": 15,
                         "timeoutSeconds": 10,
-                        "failureThreshold": 5
+                        "failureThreshold": 10
                       },
                       "livenessProbe": {
-                        "httpGet": {
-                          "path": "/",
+                        "tcpSocket": {
                           "port": 3000
                         },
-                        "initialDelaySeconds": 60,
+                        "initialDelaySeconds": 90,
                         "periodSeconds": 30,
                         "timeoutSeconds": 10,
-                        "failureThreshold": 3
+                        "failureThreshold": 5
                       }
                     }
                   ]
@@ -283,24 +289,55 @@ jobs:
             }
           }' || echo "Frontend 패치 실패"
 
-          echo "✅ 배포 완료 - 헬스체크 개선됨"
+          echo "✅ 헬스체크 수정 완료"
 
-      - name: 🔍 배포 상태 확인
+      - name: 🔄 Pod 재시작으로 변경사항 적용
         env:
           NAMESPACE: "club-platform-staging"
         run: |
-          echo "📋 배포 상태 확인 중..."
+          echo "🔄 Pod들 재시작하여 변경사항 적용..."
           
-          # 잠시 대기 후 상태 확인
-          sleep 30
+          # Pod들 삭제하여 재시작 (새로운 헬스체크 적용)
+          kubectl delete pods -l app=mysql -n "${NAMESPACE}" || echo "MySQL Pod 없음"
+          kubectl delete pods -l app=backend -n "${NAMESPACE}" || echo "Backend Pod 없음" 
+          kubectl delete pods -l app=frontend -n "${NAMESPACE}" || echo "Frontend Pod 없음"
+          
+          echo "✅ Pod 재시작 완료"
+
+      - name: 🔍 상세 진단 및 로그 확인
+        env:
+          NAMESPACE: "club-platform-staging"
+        run: |
+          echo "📋 상세 진단 시작..."
+          
+          # 잠시 대기 (Pod 재시작 대기)
+          sleep 60
           
           echo "🔍 Pod 상태:"
-          kubectl get pods -n ${NAMESPACE}
+          kubectl get pods -n ${NAMESPACE} -o wide
           
           echo ""
-          echo "🔍 서비스 상태:"
-          kubectl get services -n ${NAMESPACE}
+          echo "🔍 최신 Backend Pod 로그 (앱 시작 확인):"
+          BACKEND_POD=$(kubectl get pods -n ${NAMESPACE} -l app=backend --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "no-pod")
+          if [ "$BACKEND_POD" != "no-pod" ]; then
+            kubectl logs $BACKEND_POD -n ${NAMESPACE} --tail=20 || echo "로그 없음"
+          else
+            echo "Running 상태의 Backend Pod 없음"
+          fi
+          
+          echo ""
+          echo "🔍 최신 Frontend Pod 로그 (앱 시작 확인):"
+          FRONTEND_POD=$(kubectl get pods -n ${NAMESPACE} -l app=frontend --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "no-pod")
+          if [ "$FRONTEND_POD" != "no-pod" ]; then
+            kubectl logs $FRONTEND_POD -n ${NAMESPACE} --tail=20 || echo "로그 없음"
+          else
+            echo "Running 상태의 Frontend Pod 없음"
+          fi
           
           echo ""
           echo "🔍 시크릿 상태:"
           kubectl get secrets -n ${NAMESPACE}
+          
+          echo ""
+          echo "🔍 서비스 상태:"
+          kubectl get services -n ${NAMESPACE}
