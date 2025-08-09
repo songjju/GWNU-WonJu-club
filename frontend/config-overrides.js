@@ -13,13 +13,15 @@ module.exports = function override(config, env) {
     "http": require.resolve("stream-http"),
     "https": require.resolve("https-browserify"),
     "os": require.resolve("os-browserify"),
-    "url": require.resolve("url")
+    "url": require.resolve("url"),
+    // 🔥 process 관련 모듈 해석 문제 해결
+    "process": require.resolve("process/browser.js")
   });
   config.resolve.fallback = fallback;
   
   config.plugins = (config.plugins || []).concat([
     new webpack.ProvidePlugin({
-      process: 'process/browser',
+      process: 'process/browser.js',
       Buffer: ['buffer', 'Buffer']
     })
   ]);
