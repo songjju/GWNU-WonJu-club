@@ -1,34 +1,54 @@
-# 가져올 이미지를 정의
+# 디버깅용 Dockerfile
 FROM node:22 AS builder
-# 경로 설정하기
 WORKDIR /App/frontend
-# package.json 워킹 디렉토리에 복사 (.은 설정한 워킹 디렉토리를 뜻함)
-COPY package.json .
-# 명령어 실행 (의존성 설치)
+
+# package.json 복사
+COPY package*.json ./
+
+# 환경변수 설정
+ENV DISABLE_ESLINT_PLUGIN=true
+ENV CI=false
+ENV GENERATE_SOURCEMAP=false
+
+# 의존성 설치
 RUN npm install --include=dev
-# 현재 디렉토리의 모든 파일을 도커 컨테이너의 워킹 디렉토리에 복사한다.
+
+# 소스코드 복사
 COPY . .
 
-# 각각의 명령어들은 한줄 한줄씩 캐싱되어 실행된다.
-# package.json의 내용은 자주 바뀌진 않을 거지만
-# 소스 코드는 자주 바뀌는데
-# npm install과 COPY . . 를 동시에 수행하면
-# 소스 코드가 조금 달라질때도 항상 npm install을 수행해서 리소스가 낭비된다.
-# 🔥 핵심: Production 빌드 생성
-RUN npm run build
+# 🔥 디버깅: 빌드 전 상태 확인
+RUN echo "=== 빌드 전 파일 확인 ===" && \
+    ls -la && \
+    echo "=== package.json 스크립트 확인 ===" && \
+    cat package.json | grep -A 10 '"scripts"' && \
+    echo "=== 빌드 시작 ===" && \
+    npm run build && \
+    echo "=== 빌드 완료 후 확인 ===" && \
+    ls -la && \
+    echo "=== build 폴더 확인 ===" && \
+    ls -la build/ 2>/dev/null || echo "❌ build 폴더가 없습니다!" && \
+    echo "=== build 폴더 내용 ===" && \
+    find build -type f 2>/dev/null || echo "❌ build 폴더에 파일이 없습니다!"
 
-# Stage 2: Production 단계 (Nginx 사용)
+# Stage 2: Production
 FROM nginx:alpine
 
-# 🔥 수정: React SPA용 Nginx 설정 추가 (올바른 경로)
-RUN rm /etc/nginx/conf.d/default.conf
+# 기본 파일 제거
+RUN rm -rf /usr/share/nginx/html/*
+
+# nginx 설정
 COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
-# 빌드된 파일을 nginx html 디렉토리로 복사
+# 🔥 디버깅: 복사 전후 확인
+RUN echo "=== 복사 전 nginx 디렉토리 ===" && \
+    ls -la /usr/share/nginx/html/
+
 COPY --from=builder /App/frontend/build /usr/share/nginx/html
 
-# 3000번 포트 노출
-EXPOSE 3000
+RUN echo "=== 복사 후 nginx 디렉토리 ===" && \
+    ls -la /usr/share/nginx/html/ && \
+    echo "=== 파일 개수 ===" && \
+    find /usr/share/nginx/html -type f | wc -l
 
-# Nginx 실행
+EXPOSE 3000
 CMD ["nginx", "-g", "daemon off;"]
